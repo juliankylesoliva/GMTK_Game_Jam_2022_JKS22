@@ -2,8 +2,12 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+public enum PlayerCode { P1, P2 }
+
 public class PlayerField : MonoBehaviour
 {
+    [SerializeField] PlayerCode playerCode;
+
     [SerializeField] DiceDeck_SO diceDeck;
     [SerializeField] CurrentRollsField currentRollsField;
     [SerializeField] OrderField actionOrderField;
@@ -15,42 +19,6 @@ public class PlayerField : MonoBehaviour
     void Update()
     {
         CheckIfDiceClickedOn();
-    }
-
-    private void CheckIfDiceClickedOn()
-    {
-        if (Input.GetMouseButtonDown(0))
-        {
-            RaycastHit2D hit = Physics2D.Raycast(Camera.main.ScreenToWorldPoint(Input.mousePosition), Vector2.zero);
-            if (hit.collider != null)
-            {
-                DieObj tempDie = hit.transform.gameObject.GetComponent<DieObj>();
-                if (tempDie != null)
-                {
-                    if (currentRollsField.ContainsDiceObject(tempDie))
-                    {
-                        if (tempDie.gameObject.tag == "ActionDie")
-                        {
-                            SendDieToActionOrderField(tempDie.DieID + 1);
-                        }
-                        else if (tempDie.gameObject.tag == "NumberDie")
-                        {
-                            SendDieToNumberOrderField(tempDie.DieID + 1);
-                        }
-                        else {/* Nothing */}
-                    }
-                    else if (actionOrderField.ContainsDiceObject(tempDie))
-                    {
-                        TakeDieFromActionOrderField(tempDie.DieID);
-                    }
-                    else if (numberOrderField.ContainsDiceObject(tempDie))
-                    {
-                        TakeDieFromNumberOrderField(tempDie.DieID);
-                    }
-                    else {/* Nothing */}
-                }
-            }
-        }
     }
 
     public void RollActionDice()
@@ -95,14 +63,50 @@ public class PlayerField : MonoBehaviour
         }
     }
 
-    public void SendDieToActionOrderField(int posNum)
+    private void CheckIfDiceClickedOn()
+    {
+        if (Input.GetMouseButtonDown(0))
+        {
+            RaycastHit2D hit = Physics2D.Raycast(Camera.main.ScreenToWorldPoint(Input.mousePosition), Vector2.zero);
+            if (hit.collider != null)
+            {
+                DieObj tempDie = hit.transform.gameObject.GetComponent<DieObj>();
+                if (tempDie != null)
+                {
+                    if (currentRollsField.ContainsDiceObject(tempDie))
+                    {
+                        if (tempDie.gameObject.tag == "ActionDie")
+                        {
+                            SendDieToActionOrderField(tempDie.DieID + 1);
+                        }
+                        else if (tempDie.gameObject.tag == "NumberDie")
+                        {
+                            SendDieToNumberOrderField(tempDie.DieID + 1);
+                        }
+                        else {/* Nothing */}
+                    }
+                    else if (actionOrderField.ContainsDiceObject(tempDie))
+                    {
+                        TakeDieFromActionOrderField(tempDie.DieID);
+                    }
+                    else if (numberOrderField.ContainsDiceObject(tempDie))
+                    {
+                        TakeDieFromNumberOrderField(tempDie.DieID);
+                    }
+                    else {/* Nothing */}
+                }
+            }
+        }
+    }
+
+    private void SendDieToActionOrderField(int posNum)
     {
         if (posNum < 1 || posNum > 5) { return; }
         DieObj tempDie = currentRollsField.RemoveDieFromPosition(posNum);
         actionOrderField.PlaceDieInOrderField(tempDie);
     }
 
-    public void TakeDieFromActionOrderField(int id)
+    private void TakeDieFromActionOrderField(int id)
     {
         if (id < 0 || id > 4 || !currentRollsField.IsPositionEmpty(id + 1)) { return; }
         DieObj tempDie = actionOrderField.GetDieFromOrderField(id);
@@ -112,14 +116,14 @@ public class PlayerField : MonoBehaviour
         }
     }
 
-    public void SendDieToNumberOrderField(int posNum)
+    private void SendDieToNumberOrderField(int posNum)
     {
         if (posNum < 1 || posNum > 5) { return; }
         DieObj tempDie = currentRollsField.RemoveDieFromPosition(posNum);
         numberOrderField.PlaceDieInOrderField(tempDie);
     }
 
-    public void TakeDieFromNumberOrderField(int id)
+    private void TakeDieFromNumberOrderField(int id)
     {
         if (id < 0 || id > 4 || !currentRollsField.IsPositionEmpty(id + 1)) { return; }
         if (!currentRollsField.IsPositionEmpty(id + 1)) { return; }

@@ -13,5 +13,8 @@ MonoBehaviour:
   m_Name: All-Around Die
   m_EditorClassIdentifier: 
   side1: 0
-  side2: 1
-  side3: 2
+  side2: 0
+  side3: 1
+  side4: 1
+  side5: 2
+  side6: 2
