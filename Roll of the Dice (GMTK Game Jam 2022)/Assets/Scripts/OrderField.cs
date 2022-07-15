@@ -2,9 +2,9 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class ActionOrderField : CurrentRollsField
+public class OrderField : CurrentRollsField
 {
-    public void PlaceDieInOrderField(ActionDie_Obj dieObj)
+    public void PlaceDieInOrderField(DieObj dieObj)
     {
         for (int i = 0; i < 5; ++i)
         {
@@ -18,13 +18,13 @@ public class ActionOrderField : CurrentRollsField
         }
     }
 
-    public ActionDie_Obj GetDieFromOrderField(int id)
+    public DieObj GetDieFromOrderField(int id)
     {
-        ActionDie_Obj result = null;
+        DieObj result = null;
 
         for (int i = 0; i < 5; ++i)
         {
-            ActionDie_Obj a = diceObjArray[i];
+            DieObj a = diceObjArray[i];
             if (a != null && a.DieID == id)
             {
                 result = a;
@@ -49,7 +49,7 @@ public class ActionOrderField : CurrentRollsField
                 {
                     if (diceObjArray[j] != null)
                     {
-                        ActionDie_Obj tempDie = RemoveDieFromPosition(j + 1);
+                        DieObj tempDie = RemoveDieFromPosition(j + 1);
                         PlaceDieInOrderField(tempDie);
                         break;
                     }

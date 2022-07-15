@@ -2,15 +2,9 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class ActionDie_Obj : MonoBehaviour
+public class ActionDieObj : DieObj
 {
-    [SerializeField] Sprite[] actionSideSprites;
-
-    private SpriteRenderer spriteRenderer;
-
     private SideType[] dieSides;
-
-    private int currentSideIndex = -1;
 
     private int strength = 0;
     public int Strength
@@ -38,17 +32,6 @@ public class ActionDie_Obj : MonoBehaviour
         }
     }
 
-    private int dieID = -1;
-    public int DieID
-    {
-        get { return dieID; }
-    }
-
-    void Awake()
-    {
-        spriteRenderer = this.gameObject.GetComponent<SpriteRenderer>();
-    }
-
     void Update()
     {
         if (currentSideIndex >= 0)
@@ -57,19 +40,19 @@ public class ActionDie_Obj : MonoBehaviour
             switch (currentSideType)
             {
                 case SideType.STRIKE:
-                    spriteRenderer.sprite = actionSideSprites[0];
+                    spriteRenderer.sprite = sideSprites[0];
                     break;
                 case SideType.GUARD:
-                    spriteRenderer.sprite = actionSideSprites[1];
+                    spriteRenderer.sprite = sideSprites[1];
                     break;
                 case SideType.SUPPORT:
-                    spriteRenderer.sprite = actionSideSprites[2];
+                    spriteRenderer.sprite = sideSprites[2];
                     break;
             }
         }
         else
         {
-            spriteRenderer.sprite = actionSideSprites[3];
+            spriteRenderer.sprite = sideSprites[3];
         }
     }
 
@@ -77,11 +60,6 @@ public class ActionDie_Obj : MonoBehaviour
     {
         dieSides = adso.SideList;
         dieID = id;
-    }
-
-    public void Roll()
-    {
-        currentSideIndex = Random.Range(0, 6);
     }
 
     public SideType GetCurrentSideType()
