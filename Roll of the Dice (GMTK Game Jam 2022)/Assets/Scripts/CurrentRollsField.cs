@@ -19,12 +19,24 @@ public class CurrentRollsField : MonoBehaviour
     {
         if (posNum < 1 || posNum > 5) { return null; }
 
-        ActionDie_Obj dieObj = diceObjArray[posNum];
+        ActionDie_Obj dieObj = diceObjArray[posNum - 1];
         if (dieObj == null) { return null; }
 
         diceObjArray[posNum - 1] = null;
         dieObj.transform.parent = null;
         return dieObj;
+    }
+
+    public bool ContainsDiceObject(ActionDie_Obj dieObj)
+    {
+        foreach (ActionDie_Obj d in diceObjArray)
+        {
+            if (d != null && GameObject.ReferenceEquals(dieObj, d))
+            {
+                return true;
+            }
+        }
+        return false;
     }
 
     public void ClearField()

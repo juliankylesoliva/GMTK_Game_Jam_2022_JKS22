@@ -8,7 +8,7 @@ public class ActionOrderField : CurrentRollsField
     {
         for (int i = 0; i < 5; ++i)
         {
-            if (diceObjArray[i] != null)
+            if (diceObjArray[i] == null)
             {
                 dieObj.transform.parent = dicePositions[i];
                 dieObj.transform.localPosition = Vector3.zero;
