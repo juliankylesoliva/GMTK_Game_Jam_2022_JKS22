@@ -39,6 +39,20 @@ public class OrderField : CurrentRollsField
         return result;
     }
 
+    public DieObj GetNextDie()
+    {
+        DieObj result = diceObjArray[0];
+        if (result != null)
+        {
+            diceObjArray[0] = null;
+            result.transform.parent = null;
+        }
+
+        ShiftArray();
+
+        return result;
+    }
+
     private void ShiftArray()
     {
         for (int i = 0; i < 4; ++i)

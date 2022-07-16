@@ -63,6 +63,20 @@ public class PlayerField : MonoBehaviour
         }
     }
 
+    public void AssignActionStrengths()
+    {
+        for (int i = 0; i < 5; ++i)
+        {
+            ActionDieObj action = actionDiceRefs[i];
+            DieObj number = numberDiceRefs[i];
+
+            if (action != null && number != null)
+            {
+                action.Strength = number.GetCurrentSideNumber();
+            }
+        }
+    }
+
     private void CheckIfDiceClickedOn()
     {
         if (IsItMyTurnYet() && Input.GetMouseButtonDown(0))
@@ -126,6 +140,11 @@ public class PlayerField : MonoBehaviour
         }
     }
 
+    public ActionDieObj TakeNextActionDie()
+    {
+        return (ActionDieObj)actionOrderField.GetNextDie();
+    }
+
     public bool IsActionOrderFieldFull()
     {
         return actionOrderField.IsFull();
@@ -147,6 +166,11 @@ public class PlayerField : MonoBehaviour
         {
             currentRollsField.SetDieToPosition(tempDie, tempDie.DieID + 1);
         }
+    }
+
+    public DieObj TakeNextNumberDie()
+    {
+        return numberOrderField.GetNextDie();
     }
 
     public bool IsNumberOrderFieldFull()

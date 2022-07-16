@@ -19,15 +19,28 @@ public class ActionDieObj : DieObj
         }
     }
 
-    private int multiplier = 1;
-    public int Multiplier
+    private int bonus = 0;
+    public int Bonus
     {
-        get { return multiplier; }
+        get { return bonus; }
         set
         {
             if (value > 0)
             {
-                multiplier = value;
+                bonus = value;
+            }
+        }
+    }
+
+    private int penalty = 0;
+    public int Penalty
+    {
+        get { return penalty; }
+        set
+        {
+            if (value > 0)
+            {
+                penalty = value;
             }
         }
     }
