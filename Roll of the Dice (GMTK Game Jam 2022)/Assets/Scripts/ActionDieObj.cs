@@ -32,15 +32,15 @@ public class ActionDieObj : DieObj
         }
     }
 
-    private int penalty = 0;
-    public int Penalty
+    private int preference = 0;
+    public int Preference
     {
-        get { return penalty; }
+        get { return preference; }
         set
         {
             if (value > 0)
             {
-                penalty = value;
+                preference = value;
             }
         }
     }

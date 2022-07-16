@@ -26,6 +26,12 @@ public class TheGameMaster : MonoBehaviour
 
     [SerializeField] GameObject nextPhaseButton;
 
+    [SerializeField] TMP_Text p1LPText;
+    [SerializeField] TMP_Text p2LPText;
+
+    [SerializeField] TMP_Text p1SetBonusText;
+    [SerializeField] TMP_Text p2SetBonusText;
+
     private const int MAX_LIFE_POINTS = 100;
     private const int BONUS_HEALING = 3;
 
@@ -43,6 +49,11 @@ public class TheGameMaster : MonoBehaviour
     private int p2MaxLP;
     private int p2CurrentLP;
 
+    void Awake()
+    {
+        Application.targetFrameRate = 60;
+    }
+
     void Start()
     {
         p1MaxLP = MAX_LIFE_POINTS;
@@ -52,6 +63,12 @@ public class TheGameMaster : MonoBehaviour
         p2CurrentLP = startingLifePoints;
 
         CoinFlipSetup();
+    }
+
+    void Update()
+    {
+        p1LPText.text = $"P1\n{p1CurrentLP}/{p1MaxLP} LP";
+        p2LPText.text = $"P2\n{p2CurrentLP}/{p2MaxLP} LP";
     }
 
     public static PlayerCode GetCurrentTurn()
@@ -210,8 +227,13 @@ public class TheGameMaster : MonoBehaviour
     {
         currentPhase = GamePhase.NUMBER;
 
+        int[] bonusArray = null;
+        SetName currentSet = SetName.NONE;
+
         firstRoll = true;
         rollsLeft = (currentTurn == firstPlayer ? 2 : 3);
+
+        PlayerField currentPlayer = (currentTurn == PlayerCode.P1 ? playerField1 : playerField2);
 
         announcerText.text = $"{(currentTurn == PlayerCode.P1 ? "Player 1" : "Player 2")}, click on the dice at the Roll Zone to send it to the Number Queue and keep its value. " +
                                  "Number Dice are paired with their respective Action Dice in the queue and determine the Action Die's strength alongside bonus points for certain number arrangements. " +
@@ -233,6 +255,43 @@ public class TheGameMaster : MonoBehaviour
 
             nextPhaseButton.SetActive((currentTurn == PlayerCode.P1 ? playerField1 : playerField2).IsNumberOrderFieldFull());
 
+            if (nextPhaseButton.activeSelf)
+            {
+                if (bonusArray == null)
+                {
+                    currentSet = SetChecker.CheckGivenSet(currentPlayer.GetNumberOrderArray(), ref bonusArray);
+                }
+                else
+                {
+                    if (currentTurn == PlayerCode.P1)
+                    {
+                        p1SetBonusText.gameObject.SetActive(true);
+
+                        p1SetBonusText.text = $"{SetChecker.GetSetNameString(currentSet)}\n\n+{bonusArray[4]} +{bonusArray[3]} +{bonusArray[2]} +{bonusArray[1]} +{bonusArray[0]}";
+                    }
+                    else
+                    {
+                        p2SetBonusText.gameObject.SetActive(true);
+
+                        p2SetBonusText.text = $"{SetChecker.GetSetNameString(currentSet)}\n\n+{bonusArray[0]} +{bonusArray[1]} +{bonusArray[2]} +{bonusArray[3]} +{bonusArray[4]}";
+                    }
+                }
+            }
+            else
+            {
+                if (currentTurn == PlayerCode.P1)
+                {
+                    p1SetBonusText.gameObject.SetActive(false);
+                }
+                else
+                {
+                    p2SetBonusText.gameObject.SetActive(false);
+                }
+
+                bonusArray = null;
+                currentSet = SetName.NONE;
+            }
+
             yield return null;
         }
 
@@ -241,8 +300,8 @@ public class TheGameMaster : MonoBehaviour
         nextPhaseButton.SetActive(false);
         rollButton.SetActive(false);
 
-        PlayerField currentPlayer = (currentTurn == PlayerCode.P1 ? playerField1 : playerField2);
         currentPlayer.AssignActionStrengths();
+        currentPlayer.AssignSetBonuses(bonusArray);
 
         if (currentTurn == firstPlayer)
         {
@@ -293,7 +352,7 @@ public class TheGameMaster : MonoBehaviour
             ActionDieObj p1ActDie = playerField1.TakeNextActionDie();
             DieObj p1NumDie = playerField1.TakeNextNumberDie();
             SideType p1Action = p1ActDie.GetCurrentSideType();
-            int p1TotalPower = (p1ActDie.Strength + p1ActDie.Bonus - p1ActDie.Penalty);
+            int p1TotalPower = (p1ActDie.Strength + p1ActDie.Bonus - p1ActDie.Preference);
             if (p1TotalPower < 0)
             {
                 p1TotalPower = 0;
@@ -305,7 +364,7 @@ public class TheGameMaster : MonoBehaviour
             ActionDieObj p2ActDie = playerField2.TakeNextActionDie();
             DieObj p2NumDie = playerField2.TakeNextNumberDie();
             SideType p2Action = p2ActDie.GetCurrentSideType();
-            int p2TotalPower = (p2ActDie.Strength + p2ActDie.Bonus - p2ActDie.Penalty);
+            int p2TotalPower = (p2ActDie.Strength + p2ActDie.Bonus - p2ActDie.Preference);
             if (p2TotalPower < 0)
             {
                 p2TotalPower = 0;
@@ -326,6 +385,9 @@ public class TheGameMaster : MonoBehaviour
 
             if (p1CurrentLP <= 0 || p2CurrentLP <= 0)
             {
+                p1SetBonusText.gameObject.SetActive(false);
+                p2SetBonusText.gameObject.SetActive(false);
+
                 if (p1CurrentLP <= 0)
                 {
                     DeclareVictor(PlayerCode.P2);
@@ -336,6 +398,9 @@ public class TheGameMaster : MonoBehaviour
                 }
             }
         }
+
+        p1SetBonusText.gameObject.SetActive(false);
+        p2SetBonusText.gameObject.SetActive(false);
 
         if (p1CurrentLP <= 0 || p2CurrentLP <= 0)
         {
@@ -421,7 +486,7 @@ public class TheGameMaster : MonoBehaviour
         foreach (PlayerCode current in playerOrder)
         {
             SideType thisAction = (current == PlayerCode.P1 ? p1Action : p2Action);
-            string thisPlayerString = (current == PlayerCode.P1 ? "Player 1" : "Player2");
+            string thisPlayerString = (current == PlayerCode.P1 ? "Player 1" : "Player 2");
             int thisPlayerPower = (current == PlayerCode.P1 ? p1TotalPower : p2TotalPower);
 
             PlayerCode otherPlayer = (current == PlayerCode.P1 ? PlayerCode.P2 : PlayerCode.P1);
@@ -437,8 +502,8 @@ public class TheGameMaster : MonoBehaviour
                     case SideType.STRIKE:
                         announcerText.text = $"{thisPlayerString} interrupted {otherPlayerString}'s healing with an attack!";
                         yield return new WaitForSeconds(1f);
-                        damage = thisPlayerPower;
-                        announcerText.text = $"{thisPlayerString} dealt {damage} damage to {otherPlayerString}";
+                        damage = (thisPlayerPower * 2);
+                        announcerText.text = $"{thisPlayerString} dealt a boosted {damage} damage to {otherPlayerString}";
                         bool isDead = DealDamageTo(otherPlayer, damage, otherAction == SideType.GUARD);
                         Debug.Log($"P1: {p1CurrentLP}/{p1MaxLP} | P2: {p2CurrentLP}/{p2MaxLP}");
                         if (isDead) { yield break; }

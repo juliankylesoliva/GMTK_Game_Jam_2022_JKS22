@@ -80,6 +80,24 @@ public class CurrentRollsField : MonoBehaviour
         return true;
     }
 
+    public int[] GetDiceValueArray()
+    {
+        int[] result = new int[5];
+        for (int i = 0; i < 5; ++i)
+        {
+            DieObj tempDie = diceObjArray[i];
+            if (tempDie != null)
+            {
+                result[i] = tempDie.GetCurrentSideNumber();
+            }
+            else
+            {
+                return null;
+            }
+        }
+        return result;
+    }
+
     public void ClearField()
     {
         for (int i = 0; i < 5; ++i)

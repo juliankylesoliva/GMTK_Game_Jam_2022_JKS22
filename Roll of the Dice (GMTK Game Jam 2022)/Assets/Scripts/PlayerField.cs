@@ -63,6 +63,11 @@ public class PlayerField : MonoBehaviour
         }
     }
 
+    public int[] GetNumberOrderArray()
+    {
+        return numberOrderField.GetDiceValueArray();
+    }
+
     public void AssignActionStrengths()
     {
         for (int i = 0; i < 5; ++i)
@@ -73,6 +78,19 @@ public class PlayerField : MonoBehaviour
             if (action != null && number != null)
             {
                 action.Strength = number.GetCurrentSideNumber();
+            }
+        }
+    }
+
+    public void AssignSetBonuses(int[] bonusArray)
+    {
+        for (int i = 0; i < 5; ++i)
+        {
+            ActionDieObj action = actionDiceRefs[i];
+
+            if (action != null && bonusArray != null)
+            {
+                action.Bonus = bonusArray[i];
             }
         }
     }
