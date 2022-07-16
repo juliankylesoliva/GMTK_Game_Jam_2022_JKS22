@@ -65,7 +65,7 @@ public class PlayerField : MonoBehaviour
 
     private void CheckIfDiceClickedOn()
     {
-        if (Input.GetMouseButtonDown(0))
+        if (IsItMyTurnYet() && Input.GetMouseButtonDown(0))
         {
             RaycastHit2D hit = Physics2D.Raycast(Camera.main.ScreenToWorldPoint(Input.mousePosition), Vector2.zero);
             if (hit.collider != null)
@@ -99,6 +99,16 @@ public class PlayerField : MonoBehaviour
         }
     }
 
+    public bool IsCurrentRollsFieldEmpty()
+    {
+        return currentRollsField.IsEmpty();
+    }
+
+    public bool DoesCurrentRollsFieldHaveDice()
+    {
+        return currentRollsField.ContainsDice();
+    }
+
     private void SendDieToActionOrderField(int posNum)
     {
         if (posNum < 1 || posNum > 5) { return; }
@@ -114,6 +124,11 @@ public class PlayerField : MonoBehaviour
         {
             currentRollsField.SetDieToPosition(tempDie, tempDie.DieID + 1);
         }
+    }
+
+    public bool IsActionOrderFieldFull()
+    {
+        return actionOrderField.IsFull();
     }
 
     private void SendDieToNumberOrderField(int posNum)
@@ -132,5 +147,15 @@ public class PlayerField : MonoBehaviour
         {
             currentRollsField.SetDieToPosition(tempDie, tempDie.DieID + 1);
         }
+    }
+
+    public bool IsNumberOrderFieldFull()
+    {
+        return numberOrderField.IsFull();
+    }
+
+    private bool IsItMyTurnYet()
+    {
+        return playerCode == TheGameMaster.GetCurrentTurn();
     }
 }

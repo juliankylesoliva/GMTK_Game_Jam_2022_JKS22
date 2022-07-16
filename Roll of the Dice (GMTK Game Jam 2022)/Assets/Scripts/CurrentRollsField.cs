@@ -56,6 +56,30 @@ public class CurrentRollsField : MonoBehaviour
         return false;
     }
 
+    public bool IsFull()
+    {
+        foreach (DieObj d in diceObjArray)
+        {
+            if (d == null)
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public bool IsEmpty()
+    {
+        foreach (DieObj d in diceObjArray)
+        {
+            if (d != null)
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+
     public void ClearField()
     {
         for (int i = 0; i < 5; ++i)

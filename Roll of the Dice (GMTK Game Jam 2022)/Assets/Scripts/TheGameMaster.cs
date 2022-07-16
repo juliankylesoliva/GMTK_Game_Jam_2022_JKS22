@@ -11,18 +11,35 @@ public class TheGameMaster : MonoBehaviour
 {
     [SerializeField] GameMode gameMode = GameMode.SHARED_2PLAYER;
 
+    [SerializeField] PlayerField playerField1;
+    [SerializeField] PlayerField playerField2;
+
     [SerializeField] TMP_Text announcerText;
 
     [SerializeField] GameObject evenOrOddButtons;
     [SerializeField] GameObject firstOrSecondButtons;
 
+    [SerializeField] GameObject rollButton;
+    [SerializeField] TMP_Text rollButtonText;
+
+    [SerializeField] GameObject nextPhaseButton;
+
     private static PlayerCode currentTurn;
     private PlayerCode firstPlayer;
     private static GamePhase currentPhase;
 
+    private bool firstRoll = false;
+    private int rollsLeft = 0;
+    private bool changePhase = false;
+
     void Start()
     {
         CoinFlipSetup();
+    }
+
+    public static PlayerCode GetCurrentTurn()
+    {
+        return currentTurn;
     }
 
     private void CoinFlipSetup()
@@ -105,33 +122,98 @@ public class TheGameMaster : MonoBehaviour
                 if (isFirstClicked)
                 {
                     firstPlayer = PlayerCode.P1;
-                    StartCoroutine(SwitchTurnToPlayer(PlayerCode.P1));
+                    StartCoroutine(ActionPhase(PlayerCode.P1));
                 }
                 else
                 {
                     firstPlayer = PlayerCode.P2;
-                    StartCoroutine(SwitchTurnToPlayer(PlayerCode.P2));
+                    StartCoroutine(ActionPhase(PlayerCode.P2));
                 }
                 break;
             case PlayerCode.P2:
                 if (isFirstClicked)
                 {
                     firstPlayer = PlayerCode.P2;
-                    StartCoroutine(SwitchTurnToPlayer(PlayerCode.P2));
+                    StartCoroutine(ActionPhase(PlayerCode.P2));
                 }
                 else
                 {
                     firstPlayer = PlayerCode.P1;
-                    StartCoroutine(SwitchTurnToPlayer(PlayerCode.P1));
+                    StartCoroutine(ActionPhase(PlayerCode.P1));
                 }
                 break;
         }
     }
 
-    private IEnumerator SwitchTurnToPlayer(PlayerCode player)
+    private IEnumerator ActionPhase(PlayerCode player)
     {
         currentTurn = player;
         currentPhase = GamePhase.ACTION;
+
+        firstRoll = true;
+        rollsLeft = (currentTurn == firstPlayer ? 2 : 3);
+
+        announcerText.text = $"{(currentTurn == PlayerCode.P1 ? "Player 1" : "Player 2")}, click on the dice at the Roll Zone to send it to the Action Queue and keep its value. " +
+                                 "The opposing pair of dice that are closest to the center go first, followed by the next closest pair and so on. " +
+                                 "Click on a die from the action queue to send it back to the Roll Zone.";
+
+        rollButton.SetActive(true);
+
+        while (!changePhase)
+        {
+            if (rollButtonText.gameObject.activeSelf)
+            {
+                rollButtonText.text = $"Roll ({rollsLeft} Left)";
+            }
+
+            if (rollButton.activeSelf && rollsLeft <= 0)
+            {
+                rollButton.SetActive(false);
+            }
+
+            nextPhaseButton.SetActive((currentTurn == PlayerCode.P1 ? playerField1 : playerField2).IsActionOrderFieldFull());
+
+            yield return null;
+        }
+
+        changePhase = false;
+        rollsLeft = 0;
+        nextPhaseButton.SetActive(false);
+
+        StartCoroutine(NumberPhase());
+    }
+
+    private IEnumerator NumberPhase()
+    {
         yield return null;
+    }
+
+    public void RollButtonClick()
+    {
+        PlayerField player = (currentTurn == PlayerCode.P1 ? playerField1 : playerField2);
+
+        if (rollsLeft > 0 && (firstRoll || player.DoesCurrentRollsFieldHaveDice()) && (currentPhase == GamePhase.ACTION || currentPhase == GamePhase.NUMBER))
+        {
+            firstRoll = false;
+
+            if (currentPhase == GamePhase.ACTION)
+            {
+                player.RollActionDice();
+            }
+            else
+            {
+                player.RollNumberDice();
+            }
+
+            rollsLeft--;
+        }
+    }
+
+    public void PhaseChangeButtonClick()
+    {
+        if (!changePhase)
+        {
+            changePhase = true;
+        }
     }
 }
