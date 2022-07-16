@@ -9,6 +9,13 @@ public class DieObj : MonoBehaviour
     protected SpriteRenderer spriteRenderer;
 
     protected int currentSideIndex = -1;
+    protected bool rollThisFrame = true;
+
+    protected bool isRolling = false;
+    public bool IsRolling
+    {
+        get { return isRolling; }
+    }
 
     protected int dieID = -1;
     public int DieID
@@ -23,13 +30,24 @@ public class DieObj : MonoBehaviour
 
     void Update()
     {
-        if (currentSideIndex >= 0)
+        if (currentSideIndex >= 0 && !isRolling)
         {
             spriteRenderer.sprite = sideSprites[currentSideIndex];
         }
         else
         {
-            spriteRenderer.sprite = sideSprites[6];
+            if (isRolling)
+            {
+                if (rollThisFrame)
+                {
+                    spriteRenderer.sprite = sideSprites[Random.Range(0, 6)];
+                }
+                rollThisFrame = !rollThisFrame;
+            }
+            else
+            {
+                spriteRenderer.sprite = sideSprites[6];
+            }
         }
     }
 
@@ -40,7 +58,18 @@ public class DieObj : MonoBehaviour
 
     public void Roll()
     {
+        if (!isRolling)
+        {
+            StartCoroutine(RollCoroutine());
+        }
+    }
+
+    protected IEnumerator RollCoroutine()
+    {
+        isRolling = true;
+        yield return new WaitForSeconds(0.75f);
         currentSideIndex = Random.Range(0, 6);
+        isRolling = false;
     }
 
     public int GetCurrentSideNumber()

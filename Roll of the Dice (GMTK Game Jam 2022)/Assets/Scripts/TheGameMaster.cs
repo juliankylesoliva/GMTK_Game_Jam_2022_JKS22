@@ -39,6 +39,7 @@ public class TheGameMaster : MonoBehaviour
     private PlayerCode firstPlayer;
     private static GamePhase currentPhase;
 
+    private bool rollButtonCooldown = false;
     private bool firstRoll = false;
     private int rollsLeft = 0;
     private bool changePhase = false;
@@ -108,6 +109,8 @@ public class TheGameMaster : MonoBehaviour
         GameObject tempObj = Instantiate(TheDieFactory.GetNumberDiePrefab(), Vector3.zero, Quaternion.identity);
         DieObj tempDie = tempObj.GetComponent<DieObj>();
         tempDie.Roll();
+
+        yield return StartCoroutine(RollButtonCooldown());
 
         bool isDieEven = (tempDie.GetCurrentSideNumber() % 2 == 0);
 
@@ -200,6 +203,22 @@ public class TheGameMaster : MonoBehaviour
 
         while (!changePhase)
         {
+            if (rollButtonCooldown)
+            {
+                if (rollButton.activeSelf)
+                {
+                    rollButton.SetActive(false);
+                }
+            }
+            else
+            {
+                if (!rollButton.activeSelf)
+                {
+                    rollButton.SetActive(true);
+                }
+
+            }
+
             if (rollButtonText.gameObject.activeSelf)
             {
                 rollButtonText.text = $"Roll ({rollsLeft} Left)";
@@ -243,6 +262,22 @@ public class TheGameMaster : MonoBehaviour
 
         while (!changePhase)
         {
+            if (rollButtonCooldown)
+            {
+                if (rollButton.activeSelf)
+                {
+                    rollButton.SetActive(false);
+                }
+            }
+            else
+            {
+                if (!rollButton.activeSelf)
+                {
+                    rollButton.SetActive(true);
+                }
+
+            }
+
             if (rollButtonText.gameObject.activeSelf)
             {
                 rollButtonText.text = $"Roll ({rollsLeft} Left)";
@@ -316,6 +351,8 @@ public class TheGameMaster : MonoBehaviour
 
     public void RollButtonClick()
     {
+        if (rollButtonCooldown) { return; }
+
         PlayerField player = (currentTurn == PlayerCode.P1 ? playerField1 : playerField2);
 
         if (rollsLeft > 0 && (firstRoll || player.DoesCurrentRollsFieldHaveDice()) && (currentPhase == GamePhase.ACTION || currentPhase == GamePhase.NUMBER))
@@ -332,7 +369,15 @@ public class TheGameMaster : MonoBehaviour
             }
 
             rollsLeft--;
+            StartCoroutine(RollButtonCooldown());
         }
+    }
+
+    private IEnumerator RollButtonCooldown()
+    {
+        rollButtonCooldown = true;
+        yield return new WaitForSeconds(1f);
+        rollButtonCooldown = false;
     }
 
     public void PhaseChangeButtonClick()

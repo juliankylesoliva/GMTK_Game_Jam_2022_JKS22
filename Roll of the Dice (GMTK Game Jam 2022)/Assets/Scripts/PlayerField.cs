@@ -35,7 +35,7 @@ public class PlayerField : MonoBehaviour
                 currentRollsField.SetDieToPosition(tempDie, i + 1);
             }
 
-            if (currentRollsField.ContainsDiceObject(tempDie))
+            if (!tempDie.IsRolling && currentRollsField.ContainsDiceObject(tempDie))
             {
                 tempDie.Roll();
             }
@@ -56,7 +56,7 @@ public class PlayerField : MonoBehaviour
                 currentRollsField.SetDieToPosition(tempDie, i + 1);
             }
 
-            if (currentRollsField.ContainsDiceObject(tempDie))
+            if (!tempDie.IsRolling && currentRollsField.ContainsDiceObject(tempDie))
             {
                 tempDie.Roll();
             }
@@ -108,6 +108,8 @@ public class PlayerField : MonoBehaviour
                 DieObj tempDie = hit.transform.gameObject.GetComponent<DieObj>();
                 if (tempDie != null)
                 {
+                    if (tempDie.IsRolling) { return; }
+
                     if (currentRollsField.ContainsDiceObject(tempDie))
                     {
                         if (tempDie.gameObject.tag == "ActionDie" && TheGameMaster.GetCurrentPhase() == GamePhase.ACTION)

@@ -47,7 +47,7 @@ public class ActionDieObj : DieObj
 
     void Update()
     {
-        if (currentSideIndex >= 0)
+        if (currentSideIndex >= 0 && !isRolling)
         {
             SideType currentSideType = GetCurrentSideType();
             switch (currentSideType)
@@ -65,7 +65,18 @@ public class ActionDieObj : DieObj
         }
         else
         {
-            spriteRenderer.sprite = sideSprites[3];
+            if (isRolling)
+            {
+                if (rollThisFrame)
+                {
+                    spriteRenderer.sprite = sideSprites[Random.Range(0, 3)];
+                }
+                rollThisFrame = !rollThisFrame;
+            }
+            else
+            {
+                spriteRenderer.sprite = sideSprites[3];
+            }
         }
     }
 
