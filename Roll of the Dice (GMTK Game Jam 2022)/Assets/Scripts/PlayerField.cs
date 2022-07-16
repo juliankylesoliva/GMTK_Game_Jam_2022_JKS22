@@ -75,21 +75,21 @@ public class PlayerField : MonoBehaviour
                 {
                     if (currentRollsField.ContainsDiceObject(tempDie))
                     {
-                        if (tempDie.gameObject.tag == "ActionDie")
+                        if (tempDie.gameObject.tag == "ActionDie" && TheGameMaster.GetCurrentPhase() == GamePhase.ACTION)
                         {
                             SendDieToActionOrderField(tempDie.DieID + 1);
                         }
-                        else if (tempDie.gameObject.tag == "NumberDie")
+                        else if (tempDie.gameObject.tag == "NumberDie" && TheGameMaster.GetCurrentPhase() == GamePhase.NUMBER)
                         {
                             SendDieToNumberOrderField(tempDie.DieID + 1);
                         }
                         else {/* Nothing */}
                     }
-                    else if (actionOrderField.ContainsDiceObject(tempDie))
+                    else if (actionOrderField.ContainsDiceObject(tempDie) && TheGameMaster.GetCurrentPhase() == GamePhase.ACTION)
                     {
                         TakeDieFromActionOrderField(tempDie.DieID);
                     }
-                    else if (numberOrderField.ContainsDiceObject(tempDie))
+                    else if (numberOrderField.ContainsDiceObject(tempDie) && TheGameMaster.GetCurrentPhase() == GamePhase.NUMBER)
                     {
                         TakeDieFromNumberOrderField(tempDie.DieID);
                     }

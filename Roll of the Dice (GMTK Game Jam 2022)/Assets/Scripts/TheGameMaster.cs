@@ -42,6 +42,11 @@ public class TheGameMaster : MonoBehaviour
         return currentTurn;
     }
 
+    public static GamePhase GetCurrentPhase()
+    {
+        return currentPhase;
+    }
+
     private void CoinFlipSetup()
     {
         currentPhase = GamePhase.SETUP;
@@ -155,7 +160,7 @@ public class TheGameMaster : MonoBehaviour
 
         announcerText.text = $"{(currentTurn == PlayerCode.P1 ? "Player 1" : "Player 2")}, click on the dice at the Roll Zone to send it to the Action Queue and keep its value. " +
                                  "The opposing pair of dice that are closest to the center go first, followed by the next closest pair and so on. " +
-                                 "Click on a die from the action queue to send it back to the Roll Zone.";
+                                 "Click on a die from the Action Queue to send it back to the Roll Zone.";
 
         rollButton.SetActive(true);
 
@@ -185,7 +190,47 @@ public class TheGameMaster : MonoBehaviour
 
     private IEnumerator NumberPhase()
     {
-        yield return null;
+        currentPhase = GamePhase.NUMBER;
+
+        firstRoll = true;
+        rollsLeft = (currentTurn == firstPlayer ? 2 : 3);
+
+        announcerText.text = $"{(currentTurn == PlayerCode.P1 ? "Player 1" : "Player 2")}, click on the dice at the Roll Zone to send it to the Number Queue and keep its value. " +
+                                 "Number Dice are paired with their respective Action Dice in the queue and determine the Action Die's strength alongside bonus points for certain number arrangements. " +
+                                 "Click on a die from the Number to send it back to the Roll Zone (You cannot send back your Action Dice).";
+
+        rollButton.SetActive(true);
+
+        while (!changePhase)
+        {
+            if (rollButtonText.gameObject.activeSelf)
+            {
+                rollButtonText.text = $"Roll ({rollsLeft} Left)";
+            }
+
+            if (rollButton.activeSelf && rollsLeft <= 0)
+            {
+                rollButton.SetActive(false);
+            }
+
+            nextPhaseButton.SetActive((currentTurn == PlayerCode.P1 ? playerField1 : playerField2).IsNumberOrderFieldFull());
+
+            yield return null;
+        }
+
+        changePhase = false;
+        rollsLeft = 0;
+        nextPhaseButton.SetActive(false);
+
+        if (currentTurn == firstPlayer)
+        {
+            PlayerCode nextPlayer = (currentTurn == PlayerCode.P1 ? PlayerCode.P2 : PlayerCode.P1);
+            StartCoroutine(ActionPhase(nextPlayer));
+        }
+        else
+        {
+            StartCoroutine(BattlePhase());
+        }
     }
 
     public void RollButtonClick()
@@ -215,5 +260,10 @@ public class TheGameMaster : MonoBehaviour
         {
             changePhase = true;
         }
+    }
+
+    private IEnumerator BattlePhase()
+    {
+        yield return null;
     }
 }
