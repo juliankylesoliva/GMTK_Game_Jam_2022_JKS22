@@ -33,7 +33,7 @@ public class TheGameMaster : MonoBehaviour
     [SerializeField] TMP_Text p2SetBonusText;
 
     private const int MAX_LIFE_POINTS = 100;
-    private const int BONUS_HEALING = 3;
+    private const int BONUS_HEALING = 1;
 
     private static PlayerCode currentTurn;
     private PlayerCode firstPlayer;
@@ -391,10 +391,12 @@ public class TheGameMaster : MonoBehaviour
                 if (p1CurrentLP <= 0)
                 {
                     DeclareVictor(PlayerCode.P2);
+                    yield break;
                 }
                 else
                 {
                     DeclareVictor(PlayerCode.P1);
+                    yield break;
                 }
             }
         }
@@ -505,7 +507,6 @@ public class TheGameMaster : MonoBehaviour
                         damage = (thisPlayerPower * 2);
                         announcerText.text = $"{thisPlayerString} dealt a boosted {damage} damage to {otherPlayerString}";
                         bool isDead = DealDamageTo(otherPlayer, damage, otherAction == SideType.GUARD);
-                        Debug.Log($"P1: {p1CurrentLP}/{p1MaxLP} | P2: {p2CurrentLP}/{p2MaxLP}");
                         if (isDead) { yield break; }
                         break;
                     case SideType.GUARD:
@@ -515,7 +516,6 @@ public class TheGameMaster : MonoBehaviour
                         if (damage < 0) { damage = 0; }
                         announcerText.text = $"{thisPlayerString} took {damage} damage and held on!";
                         DealDamageTo(current, damage, thisAction == SideType.GUARD);
-                        Debug.Log($"P1: {p1CurrentLP}/{p1MaxLP} | P2: {p2CurrentLP}/{p2MaxLP}");
                         break;
                     case SideType.SUPPORT:
                         announcerText.text = $"{thisPlayerString} healed more since {otherPlayerString} defended!";
@@ -523,7 +523,6 @@ public class TheGameMaster : MonoBehaviour
                         int healing = (thisPlayerPower + BONUS_HEALING);
                         announcerText.text = $"{thisPlayerString} recovered a boosted {healing} life points!";
                         RestoreLifePointsTo(current, healing);
-                        Debug.Log($"P1: {p1CurrentLP}/{p1MaxLP} | P2: {p2CurrentLP}/{p2MaxLP}");
                         break;
                 }
                 yield return new WaitForSeconds(1f);
@@ -539,14 +538,12 @@ public class TheGameMaster : MonoBehaviour
                         int damage = thisPlayerPower;
                         announcerText.text = $"{otherPlayerString} took {damage} damage!";
                         bool isDead = DealDamageTo(otherPlayer, damage, otherAction == SideType.GUARD);
-                        Debug.Log($"P1: {p1CurrentLP}/{p1MaxLP} | P2: {p2CurrentLP}/{p2MaxLP}");
                         if (isDead) { yield break; }
                         break;
                     case SideType.GUARD:
                         announcerText.text = $"{thisPlayerString} stood guard...";
                         yield return new WaitForSeconds(1f);
                         announcerText.text = "...but nothing happened!";
-                        Debug.Log($"P1: {p1CurrentLP}/{p1MaxLP} | P2: {p2CurrentLP}/{p2MaxLP}");
                         break;
                     case SideType.SUPPORT:
                         announcerText.text = $"{thisPlayerString} took time to heal!";
@@ -554,7 +551,6 @@ public class TheGameMaster : MonoBehaviour
                         int healing = thisPlayerPower;
                         announcerText.text = $"{thisPlayerString} recovered {healing} life points!";
                         RestoreLifePointsTo(current, healing);
-                        Debug.Log($"P1: {p1CurrentLP}/{p1MaxLP} | P2: {p2CurrentLP}/{p2MaxLP}");
                         break;
                 }
                 yield return new WaitForSeconds(1f);

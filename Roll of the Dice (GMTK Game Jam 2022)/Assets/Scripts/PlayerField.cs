@@ -70,10 +70,12 @@ public class PlayerField : MonoBehaviour
 
     public void AssignActionStrengths()
     {
+        DieObj[] numberDiceOrder = numberOrderField.GetDiceObjectArray();
+        DieObj[] actionDiceOrder = actionOrderField.GetDiceObjectArray();
         for (int i = 0; i < 5; ++i)
         {
-            ActionDieObj action = actionDiceRefs[i];
-            DieObj number = numberDiceRefs[i];
+            ActionDieObj action = (ActionDieObj)actionDiceOrder[i];
+            DieObj number = numberDiceOrder[i];
 
             if (action != null && number != null)
             {
@@ -84,9 +86,10 @@ public class PlayerField : MonoBehaviour
 
     public void AssignSetBonuses(int[] bonusArray)
     {
+        DieObj[] actionDiceOrder = actionOrderField.GetDiceObjectArray();
         for (int i = 0; i < 5; ++i)
         {
-            ActionDieObj action = actionDiceRefs[i];
+            ActionDieObj action = (ActionDieObj)actionDiceOrder[i];
 
             if (action != null && bonusArray != null)
             {

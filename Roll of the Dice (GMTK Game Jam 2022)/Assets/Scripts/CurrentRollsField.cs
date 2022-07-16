@@ -80,6 +80,11 @@ public class CurrentRollsField : MonoBehaviour
         return true;
     }
 
+    public DieObj[] GetDiceObjectArray()
+    {
+        return diceObjArray;
+    }
+
     public int[] GetDiceValueArray()
     {
         int[] result = new int[5];
