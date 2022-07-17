@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using TMPro;
 
@@ -45,6 +46,8 @@ public class TheGameMaster : MonoBehaviour
     [SerializeField] Healthbar p2Healthbar;
 
     [SerializeField] SkyColors skyBackground;
+
+    [SerializeField] GameObject menuPanel;
 
     private List<ActDie_SO> deckBuilderList = new List<ActDie_SO>();
     private bool isDoneSelectingDice = false;
@@ -103,6 +106,11 @@ public class TheGameMaster : MonoBehaviour
         else
         {
             flashCounter = 60;
+        }
+
+        if (Input.GetKeyDown(KeyCode.Escape))
+        {
+            menuPanel.SetActive(!menuPanel.activeSelf);
         }
     }
 
@@ -825,5 +833,15 @@ public class TheGameMaster : MonoBehaviour
                 p1Healthbar.SinkShip();
                 break;
         }
+    }
+
+    public void RestartGame()
+    {
+        SceneManager.LoadScene(0);
+    }
+
+    public void QuitGame()
+    {
+        Application.Quit();
     }
 }

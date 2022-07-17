@@ -17,14 +17,16 @@ public class SkyColors : MonoBehaviour
 
     public void ChangeSkyColor(int index)
     {
-        if (!isChanging)
-        {
-            StartCoroutine(LerpColorChange(spriteRenderer.color, skyColors[index]));
-        }
+        StartCoroutine(LerpColorChange(spriteRenderer.color, skyColors[index]));
     }
 
     private IEnumerator LerpColorChange(Color startColor , Color endColor)
     {
+        while (isChanging)
+        {
+            yield return null;
+        }
+
         isChanging = true;
         float lerpValue = 0f;
 
