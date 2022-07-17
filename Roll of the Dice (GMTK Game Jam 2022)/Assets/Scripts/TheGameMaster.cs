@@ -512,8 +512,6 @@ public class TheGameMaster : MonoBehaviour
 
             PlayerAdvantage priority = GetMatchupPriority(p1Action, p2Action);
             yield return StartCoroutine(ResolutionStep(priority, p1Action, p1TotalPower, p2Action, p2TotalPower));
-            announcerText.text = "";
-            announcerText.color = Color.white;
 
             GameObject.Destroy(p1ActDie.gameObject);
             GameObject.Destroy(p1NumDie.gameObject);
@@ -524,6 +522,9 @@ public class TheGameMaster : MonoBehaviour
             p2PowerText.gameObject.SetActive(false);
 
             yield return new WaitForSeconds(1f);
+
+            announcerText.text = "";
+            announcerText.color = Color.white;
 
             if (p1CurrentLP <= 0 || p2CurrentLP <= 0)
             {
@@ -659,8 +660,9 @@ public class TheGameMaster : MonoBehaviour
                         announcerText.text = $"{thisPlayerString} stopped {otherPlayerString}'s healing by attacking!";
                         yield return StartCoroutine(WaitForInput());
                         damage = (thisPlayerPower * 2);
-                        announcerText.text = $"{thisPlayerString} dealt a boosted {damage} damage to {otherPlayerString}";
+                        announcerText.text = $"{thisPlayerString} dealt a boosted {damage} damage to {otherPlayerString}!";
                         bool isDead = DealDamageTo(otherPlayer, damage, otherAction == SideType.GUARD);
+                        (otherPlayer == PlayerCode.P1 ? p1Healthbar : p2Healthbar).DamageShip();
                         if (isDead) { yield break; }
                         break;
                     case SideType.GUARD:
@@ -675,6 +677,7 @@ public class TheGameMaster : MonoBehaviour
                         if (damage < 0) { damage = 0; }
                         announcerText.text = $"{thisPlayerString} held on and took {damage} damage!";
                         DealDamageTo(current, damage, thisAction == SideType.GUARD);
+                        (current == PlayerCode.P1 ? p1Healthbar : p2Healthbar).DamageShip();
                         break;
                     case SideType.SUPPORT:
                         announcerText.color = supportColor;
@@ -704,6 +707,7 @@ public class TheGameMaster : MonoBehaviour
                         int damage = thisPlayerPower;
                         announcerText.text = $"{otherPlayerString} took {damage} damage!";
                         bool isDead = DealDamageTo(otherPlayer, damage, otherAction == SideType.GUARD);
+                        (otherPlayer == PlayerCode.P1 ? p1Healthbar : p2Healthbar).DamageShip();
                         if (isDead) { yield break; }
                         break;
                     case SideType.GUARD:
@@ -805,13 +809,16 @@ public class TheGameMaster : MonoBehaviour
     private void DeclareVictor(PlayerCode player)
     {
         currentPhase = GamePhase.END;
+        currentTurn = player;
         switch (player)
         {
             case PlayerCode.P1:
                 announcerText.text = "Player 1 Wins!";
+                p2Healthbar.SinkShip();
                 break;
             case PlayerCode.P2:
                 announcerText.text = "Player 2 Wins!";
+                p1Healthbar.SinkShip();
                 break;
         }
     }

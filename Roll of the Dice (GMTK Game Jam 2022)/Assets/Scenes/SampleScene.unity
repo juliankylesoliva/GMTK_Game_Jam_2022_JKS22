@@ -1826,6 +1826,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: abdc8305aa6e4504c9c94724d249e232, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  idleAmplitude: 0.0625
+  idleRadiansPerSecond: 0.785398
+  radsPerSecDeviation: 0.25
+  damageShakeAmplitude: 0.1
+  shakeAfterEveryXFrames: 2
+  sinkingSpeed: 0.25
+  sinkingYLimit: -50
   meterFill: {fileID: 571298267}
 --- !u!4 &363295724
 Transform:
@@ -3555,6 +3562,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: abdc8305aa6e4504c9c94724d249e232, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  idleAmplitude: 0.0625
+  idleRadiansPerSecond: 0.785398
+  radsPerSecDeviation: 0.25
+  damageShakeAmplitude: 0.1
+  shakeAfterEveryXFrames: 2
+  sinkingSpeed: 0.25
+  sinkingYLimit: -50
   meterFill: {fileID: 539563086}
 --- !u!1 &743666277
 GameObject:
@@ -4060,7 +4074,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   playerCode: 1
-  diceDeck: {fileID: 11400000, guid: 76d8fd25d58eefa4199f2312a3cc2fa0, type: 2}
+  diceDeck: {fileID: 11400000, guid: f9fa66fa82829d242a265cb7cee9cb03, type: 2}
   currentRollsField: {fileID: 2090543631}
   actionOrderField: {fileID: 1491143375}
   numberOrderField: {fileID: 418370328}
@@ -6911,7 +6925,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   gameMode: 1
-  startingLifePoints: 100
+  startingLifePoints: 1
   strikeColor: {r: 0.7843138, g: 0.24313727, b: 0.24313727, a: 1}
   guardColor: {r: 0.11764707, g: 0.2901961, b: 0.6156863, a: 1}
   supportColor: {r: 0.38823533, g: 0.7686275, b: 0.27450982, a: 1}
