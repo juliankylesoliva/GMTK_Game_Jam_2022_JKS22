@@ -435,8 +435,13 @@ public class TheGameMaster : MonoBehaviour
             p2ActDie.transform.position -= (Vector3.right * 1.25f);
             p2NumDie.transform.position -= (Vector3.right * 1.25f);
 
+            p1SetBonusText.gameObject.SetActive(false);
+            p2SetBonusText.gameObject.SetActive(false);
+
             PlayerAdvantage priority = GetMatchupPriority(p1Action, p2Action);
             yield return StartCoroutine(ResolutionStep(priority, p1Action, p1TotalPower, p2Action, p2TotalPower));
+            announcerText.text = "";
+            announcerText.color = Color.white;
 
             GameObject.Destroy(p1ActDie.gameObject);
             GameObject.Destroy(p1NumDie.gameObject);
@@ -450,9 +455,6 @@ public class TheGameMaster : MonoBehaviour
 
             if (p1CurrentLP <= 0 || p2CurrentLP <= 0)
             {
-                p1SetBonusText.gameObject.SetActive(false);
-                p2SetBonusText.gameObject.SetActive(false);
-
                 if (p1CurrentLP <= 0)
                 {
                     DeclareVictor(PlayerCode.P2);
@@ -465,9 +467,6 @@ public class TheGameMaster : MonoBehaviour
                 }
             }
         }
-
-        p1SetBonusText.gameObject.SetActive(false);
-        p2SetBonusText.gameObject.SetActive(false);
 
         if (p1CurrentLP <= 0 || p2CurrentLP <= 0)
         {
@@ -569,6 +568,8 @@ public class TheGameMaster : MonoBehaviour
             thisPlayerPowerText.text = $"{thisPlayerPower}";
             otherPlayerPowerText.text = $"{otherPlayerPower}";
 
+            announcerText.color = Color.white;
+
             if (priority != PlayerAdvantage.NEUTRAL && current == playerWithPriority)
             {
                 p1PowerText.gameObject.SetActive(true);
@@ -578,6 +579,8 @@ public class TheGameMaster : MonoBehaviour
                 switch (thisAction)
                 {
                     case SideType.STRIKE:
+                        announcerText.color = strikeColor;
+
                         thisPlayerPowerText.color = strikeColor;
                         otherPlayerPowerText.color = supportColor;
 
@@ -589,6 +592,8 @@ public class TheGameMaster : MonoBehaviour
                         if (isDead) { yield break; }
                         break;
                     case SideType.GUARD:
+                        announcerText.color = guardColor;
+
                         thisPlayerPowerText.color = guardColor;
                         otherPlayerPowerText.color = strikeColor;
 
@@ -600,6 +605,8 @@ public class TheGameMaster : MonoBehaviour
                         DealDamageTo(current, damage, thisAction == SideType.GUARD);
                         break;
                     case SideType.SUPPORT:
+                        announcerText.color = supportColor;
+
                         thisPlayerPowerText.color = supportColor;
                         otherPlayerPowerText.color = guardColor;
 
