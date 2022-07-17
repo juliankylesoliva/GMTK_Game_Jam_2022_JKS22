@@ -13,6 +13,10 @@ public class TheGameMaster : MonoBehaviour
     [SerializeField] GameMode gameMode = GameMode.SHARED_2PLAYER;
     [SerializeField, Range(1, 100)] int startingLifePoints = 100;
 
+    [SerializeField] Color strikeColor;
+    [SerializeField] Color guardColor;
+    [SerializeField] Color supportColor;
+
     [SerializeField] PlayerField playerField1;
     [SerializeField] PlayerField playerField2;
 
@@ -32,6 +36,9 @@ public class TheGameMaster : MonoBehaviour
     [SerializeField] TMP_Text p1SetBonusText;
     [SerializeField] TMP_Text p2SetBonusText;
 
+    [SerializeField] TMP_Text p1PowerText;
+    [SerializeField] TMP_Text p2PowerText;
+
     private const int MAX_LIFE_POINTS = 100;
     private const int BONUS_HEALING = 1;
 
@@ -43,6 +50,8 @@ public class TheGameMaster : MonoBehaviour
     private bool firstRoll = false;
     private int rollsLeft = 0;
     private bool changePhase = false;
+
+    private int flashCounter = 60;
 
     private int p1MaxLP;
     private int p1CurrentLP;
@@ -68,8 +77,20 @@ public class TheGameMaster : MonoBehaviour
 
     void Update()
     {
-        p1LPText.text = $"P1\n{p1CurrentLP}/{p1MaxLP} LP";
-        p2LPText.text = $"P2\n{p2CurrentLP}/{p2MaxLP} LP";
+        p1LPText.text = $"P1\n{p1CurrentLP} LP";
+        p1LPText.color = (currentPhase != GamePhase.BATTLE && currentTurn == PlayerCode.P1 && flashCounter > 30 ? Color.blue : Color.white);
+
+        p2LPText.text = $"P2\n{p2CurrentLP} LP";
+        p2LPText.color = (currentPhase != GamePhase.BATTLE && currentTurn == PlayerCode.P2 && flashCounter > 30 ? Color.red : Color.white);
+
+        if (flashCounter > 0)
+        {
+            flashCounter--;
+        }
+        else
+        {
+            flashCounter = 60;
+        }
     }
 
     public static PlayerCode GetCurrentTurn()
@@ -122,13 +143,13 @@ public class TheGameMaster : MonoBehaviour
                     currentTurn = PlayerCode.P1;
                     announcerText.text = "Player 1 won the die roll!";
                     yield return new WaitForSeconds(2.0f);
-                    announcerText.text = "Player 1, would you like to go first or second?\n(You will reroll fewer times this round if you do...)";
+                    announcerText.text = "Player 1, would you like to go first?\n(You will reroll fewer times if you do...)";
                     break;
                 case PlayerCode.P2:
                     currentTurn = PlayerCode.P2;
                     announcerText.text = "Player 2 won the die roll!";
                     yield return new WaitForSeconds(2.0f);
-                    announcerText.text = "Player 2, would you like to go first or second?\n(You will reroll fewer times this round if you do...)";
+                    announcerText.text = "Player 2, would you like to go first?\n(You will reroll fewer times if you do...)";
                     break;
             }
         }
@@ -140,13 +161,13 @@ public class TheGameMaster : MonoBehaviour
                     currentTurn = PlayerCode.P2;
                     announcerText.text = "Player 2 won the die roll!";
                     yield return new WaitForSeconds(2.0f);
-                    announcerText.text = "Player 2, would you like to go first or second?\n(You will reroll fewer times this round if you do...)";
+                    announcerText.text = "Player 2, would you like to go first?\n(You will reroll fewer times if you do...)";
                     break;
                 case PlayerCode.P2:
                     currentTurn = PlayerCode.P1;
                     announcerText.text = "Player 1 won the die roll!";
                     yield return new WaitForSeconds(2.0f);
-                    announcerText.text = "Player 1, would you like to go first or second?\n(You will reroll fewer times this round if you do...)";
+                    announcerText.text = "Player 1, would you like to go first?\n(You will reroll fewer times if you do...)";
                     break;
             }
         }
@@ -195,9 +216,7 @@ public class TheGameMaster : MonoBehaviour
         firstRoll = true;
         rollsLeft = (currentTurn == firstPlayer ? 2 : 3);
 
-        announcerText.text = $"{(currentTurn == PlayerCode.P1 ? "Player 1" : "Player 2")}, click on the dice at the Roll Zone to send it to the Action Queue and keep its value. " +
-                                 "The opposing pair of dice that are closest to the center go first, followed by the next closest pair and so on. " +
-                                 "Click on a die from the Action Queue to send it back to the Roll Zone.";
+        announcerText.text = $"{(currentTurn == PlayerCode.P1 ? "Player 1" : "Player 2")}, roll and choose your Action Dice!";
 
         rollButton.SetActive(true);
 
@@ -221,7 +240,7 @@ public class TheGameMaster : MonoBehaviour
 
             if (rollButtonText.gameObject.activeSelf)
             {
-                rollButtonText.text = $"Roll ({rollsLeft} Left)";
+                rollButtonText.text = $"Rolls: {rollsLeft}";
             }
 
             if (rollButton.activeSelf && rollsLeft <= 0)
@@ -254,9 +273,7 @@ public class TheGameMaster : MonoBehaviour
 
         PlayerField currentPlayer = (currentTurn == PlayerCode.P1 ? playerField1 : playerField2);
 
-        announcerText.text = $"{(currentTurn == PlayerCode.P1 ? "Player 1" : "Player 2")}, click on the dice at the Roll Zone to send it to the Number Queue and keep its value. " +
-                                 "Number Dice are paired with their respective Action Dice in the queue and determine the Action Die's strength alongside bonus points for certain number arrangements. " +
-                                 "Click on a die from the Number to send it back to the Roll Zone (You cannot send back your Action Dice).";
+        announcerText.text = $"{(currentTurn == PlayerCode.P1 ? "Player 1" : "Player 2")}, roll and pair up your Numbered Dice!.";
 
         rollButton.SetActive(true);
 
@@ -280,7 +297,7 @@ public class TheGameMaster : MonoBehaviour
 
             if (rollButtonText.gameObject.activeSelf)
             {
-                rollButtonText.text = $"Roll ({rollsLeft} Left)";
+                rollButtonText.text = $"Rolls: {rollsLeft}";
             }
 
             if (rollButton.activeSelf && rollsLeft <= 0)
@@ -403,8 +420,8 @@ public class TheGameMaster : MonoBehaviour
                 p1TotalPower = 0;
             }
 
-            p1ActDie.transform.position += (Vector3.right * 2f);
-            p1NumDie.transform.position += (Vector3.right * 2f);
+            p1ActDie.transform.position += (Vector3.right * 1.25f);
+            p1NumDie.transform.position += (Vector3.right * 1.25f);
 
             ActionDieObj p2ActDie = playerField2.TakeNextActionDie();
             DieObj p2NumDie = playerField2.TakeNextNumberDie();
@@ -415,8 +432,8 @@ public class TheGameMaster : MonoBehaviour
                 p2TotalPower = 0;
             }
 
-            p2ActDie.transform.position -= (Vector3.right * 2f);
-            p2NumDie.transform.position -= (Vector3.right * 2f);
+            p2ActDie.transform.position -= (Vector3.right * 1.25f);
+            p2NumDie.transform.position -= (Vector3.right * 1.25f);
 
             PlayerAdvantage priority = GetMatchupPriority(p1Action, p2Action);
             yield return StartCoroutine(ResolutionStep(priority, p1Action, p1TotalPower, p2Action, p2TotalPower));
@@ -425,6 +442,9 @@ public class TheGameMaster : MonoBehaviour
             GameObject.Destroy(p1NumDie.gameObject);
             GameObject.Destroy(p2ActDie.gameObject);
             GameObject.Destroy(p2NumDie.gameObject);
+
+            p1PowerText.gameObject.SetActive(false);
+            p2PowerText.gameObject.SetActive(false);
 
             yield return new WaitForSeconds(1f);
 
@@ -530,79 +550,116 @@ public class TheGameMaster : MonoBehaviour
                 break;
         }
 
+        p2PowerText.fontSize = 30f;
+        p1PowerText.fontSize = 30f;
+
         foreach (PlayerCode current in playerOrder)
         {
             SideType thisAction = (current == PlayerCode.P1 ? p1Action : p2Action);
             string thisPlayerString = (current == PlayerCode.P1 ? "Player 1" : "Player 2");
             int thisPlayerPower = (current == PlayerCode.P1 ? p1TotalPower : p2TotalPower);
+            TMP_Text thisPlayerPowerText = (current == PlayerCode.P1 ? p1PowerText : p2PowerText);
 
             PlayerCode otherPlayer = (current == PlayerCode.P1 ? PlayerCode.P2 : PlayerCode.P1);
             SideType otherAction = (otherPlayer == PlayerCode.P1 ? p1Action : p2Action);
             string otherPlayerString = (otherPlayer == PlayerCode.P1 ? "Player 1" : "Player 2");
             int otherPlayerPower = (otherPlayer == PlayerCode.P1 ? p1TotalPower : p2TotalPower);
+            TMP_Text otherPlayerPowerText = (otherPlayer == PlayerCode.P1 ? p1PowerText : p2PowerText);
+
+            thisPlayerPowerText.text = $"{thisPlayerPower}";
+            otherPlayerPowerText.text = $"{otherPlayerPower}";
 
             if (priority != PlayerAdvantage.NEUTRAL && current == playerWithPriority)
             {
+                p1PowerText.gameObject.SetActive(true);
+                p2PowerText.gameObject.SetActive(true);
+                otherPlayerPowerText.fontSize = 20f;
                 int damage = 0;
                 switch (thisAction)
                 {
                     case SideType.STRIKE:
-                        announcerText.text = $"{thisPlayerString} interrupted {otherPlayerString}'s healing with an attack!";
-                        yield return new WaitForSeconds(1f);
+                        thisPlayerPowerText.color = strikeColor;
+                        otherPlayerPowerText.color = supportColor;
+
+                        announcerText.text = $"{thisPlayerString} stopped {otherPlayerString}'s healing by attacking!";
+                        yield return StartCoroutine(WaitForInput());
                         damage = (thisPlayerPower * 2);
                         announcerText.text = $"{thisPlayerString} dealt a boosted {damage} damage to {otherPlayerString}";
                         bool isDead = DealDamageTo(otherPlayer, damage, otherAction == SideType.GUARD);
                         if (isDead) { yield break; }
                         break;
                     case SideType.GUARD:
+                        thisPlayerPowerText.color = guardColor;
+                        otherPlayerPowerText.color = strikeColor;
+
                         announcerText.text = $"{thisPlayerString} defended against {otherPlayerString}'s attack!";
-                        yield return new WaitForSeconds(1f);
+                        yield return StartCoroutine(WaitForInput());
                         damage = (otherPlayerPower - thisPlayerPower);
                         if (damage < 0) { damage = 0; }
-                        announcerText.text = $"{thisPlayerString} took {damage} damage and held on!";
+                        announcerText.text = $"{thisPlayerString} held on and took {damage} damage!";
                         DealDamageTo(current, damage, thisAction == SideType.GUARD);
                         break;
                     case SideType.SUPPORT:
-                        announcerText.text = $"{thisPlayerString} healed more since {otherPlayerString} defended!";
-                        yield return new WaitForSeconds(1f);
+                        thisPlayerPowerText.color = supportColor;
+                        otherPlayerPowerText.color = guardColor;
+
+                        announcerText.text = $"{thisPlayerString} healed while {otherPlayerString} defended!";
+                        yield return StartCoroutine(WaitForInput());
                         int healing = (thisPlayerPower + BONUS_HEALING);
                         announcerText.text = $"{thisPlayerString} recovered a boosted {healing} life points!";
                         RestoreLifePointsTo(current, healing);
                         break;
                 }
-                yield return new WaitForSeconds(1f);
+                yield return StartCoroutine(WaitForInput());
                 yield break;
             }
             else
             {
+                thisPlayerPowerText.gameObject.SetActive(true);
                 switch (thisAction)
                 {
                     case SideType.STRIKE:
+                        thisPlayerPowerText.color = strikeColor;
                         announcerText.text = $"{thisPlayerString} attacks {otherPlayerString}!";
-                        yield return new WaitForSeconds(1f);
+                        yield return StartCoroutine(WaitForInput());
                         int damage = thisPlayerPower;
                         announcerText.text = $"{otherPlayerString} took {damage} damage!";
                         bool isDead = DealDamageTo(otherPlayer, damage, otherAction == SideType.GUARD);
                         if (isDead) { yield break; }
                         break;
                     case SideType.GUARD:
+                        thisPlayerPowerText.color = guardColor;
                         announcerText.text = $"{thisPlayerString} stood guard...";
-                        yield return new WaitForSeconds(1f);
+                        yield return StartCoroutine(WaitForInput());
                         announcerText.text = "...but nothing happened!";
                         break;
                     case SideType.SUPPORT:
+                        thisPlayerPowerText.color = supportColor;
                         announcerText.text = $"{thisPlayerString} took time to heal!";
-                        yield return new WaitForSeconds(1f);
+                        yield return StartCoroutine(WaitForInput());
                         int healing = thisPlayerPower;
                         announcerText.text = $"{thisPlayerString} recovered {healing} life points!";
                         RestoreLifePointsTo(current, healing);
                         break;
                 }
-                yield return new WaitForSeconds(1f);
+                yield return StartCoroutine(WaitForInput());
+                thisPlayerPowerText.gameObject.SetActive(false);
             }
         }
 
         yield return null;
+    }
+
+    private IEnumerator WaitForInput()
+    {
+        yield return new WaitForSeconds(1f);
+        nextPhaseButton.SetActive(true);
+        while (!changePhase)
+        {
+            yield return null;
+        }
+        changePhase = false;
+        nextPhaseButton.SetActive(false);
     }
 
     private bool DealDamageTo(PlayerCode player, int damage, bool isGuarding)
