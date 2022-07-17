@@ -13,8 +13,15 @@ public class PlayerField : MonoBehaviour
     [SerializeField] OrderField actionOrderField;
     [SerializeField] OrderField numberOrderField;
 
+    AudioSource audioSource;
+
     private ActionDieObj[] actionDiceRefs = new ActionDieObj[5];
     private DieObj[] numberDiceRefs = new DieObj[5];
+
+    void Awake()
+    {
+        audioSource = this.gameObject.GetComponent<AudioSource>();
+    }
 
     void Update()
     {
@@ -154,6 +161,7 @@ public class PlayerField : MonoBehaviour
     private void SendDieToActionOrderField(int posNum)
     {
         if (posNum < 1 || posNum > 5) { return; }
+        PlaySound("diceKeep", 0.85f);
         DieObj tempDie = currentRollsField.RemoveDieFromPosition(posNum);
         actionOrderField.PlaceDieInOrderField(tempDie);
     }
@@ -164,6 +172,7 @@ public class PlayerField : MonoBehaviour
         DieObj tempDie = actionOrderField.GetDieFromOrderField(id);
         if (tempDie != null && currentRollsField.IsPositionEmpty(id + 1))
         {
+            PlaySound("diceTake", 0.85f);
             currentRollsField.SetDieToPosition(tempDie, tempDie.DieID + 1);
         }
     }
@@ -181,6 +190,7 @@ public class PlayerField : MonoBehaviour
     private void SendDieToNumberOrderField(int posNum)
     {
         if (posNum < 1 || posNum > 5) { return; }
+        PlaySound("diceKeep", 0.85f);
         DieObj tempDie = currentRollsField.RemoveDieFromPosition(posNum);
         numberOrderField.PlaceDieInOrderField(tempDie);
     }
@@ -192,6 +202,7 @@ public class PlayerField : MonoBehaviour
         DieObj tempDie = numberOrderField.GetDieFromOrderField(id);
         if (tempDie != null)
         {
+            PlaySound("diceTake", 0.85f);
             currentRollsField.SetDieToPosition(tempDie, tempDie.DieID + 1);
         }
     }
@@ -209,5 +220,27 @@ public class PlayerField : MonoBehaviour
     private bool IsItMyTurnYet()
     {
         return playerCode == TheGameMaster.GetCurrentTurn();
+    }
+
+    public void PlaySound(string clipName, float volume)
+    {
+        AudioClip clipToPlay = SoundLibrary.GetAudioClip(clipName);
+        if (clipToPlay != null)
+        {
+            audioSource.clip = clipToPlay;
+            if (volume > 1f)
+            {
+                audioSource.volume = 1f;
+            }
+            else if (volume < 0f)
+            {
+                audioSource.volume = 0f;
+            }
+            else
+            {
+                audioSource.volume = volume;
+            }
+            audioSource.Play();
+        }
     }
 }

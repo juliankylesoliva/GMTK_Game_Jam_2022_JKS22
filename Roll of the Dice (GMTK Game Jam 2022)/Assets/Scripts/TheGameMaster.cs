@@ -49,6 +49,8 @@ public class TheGameMaster : MonoBehaviour
 
     [SerializeField] GameObject menuPanel;
 
+    AudioSource audioSource;
+
     private List<ActDie_SO> deckBuilderList = new List<ActDie_SO>();
     private bool isDoneSelectingDice = false;
     private bool dieSelectButtonClicked = false;
@@ -76,6 +78,7 @@ public class TheGameMaster : MonoBehaviour
     void Awake()
     {
         Application.targetFrameRate = 60;
+        audioSource = this.gameObject.GetComponent<AudioSource>();
     }
 
     void Start()
@@ -142,6 +145,7 @@ public class TheGameMaster : MonoBehaviour
 
     public void CoinFlipButtonClicked(bool isEvenCalled)
     {
+        PlaySound("buttonPress", 0.75f);
         evenOrOddButtons.SetActive(false);
         StartCoroutine(CoinFlipProcedure(isEvenCalled));
     }
@@ -199,6 +203,7 @@ public class TheGameMaster : MonoBehaviour
 
     public void FirstOrSecondButtonClicked(bool isFirstClicked)
     {
+        PlaySound("buttonPress", 0.75f);
         firstOrSecondButtons.SetActive(false);
         switch (currentTurn)
         {
@@ -267,6 +272,7 @@ public class TheGameMaster : MonoBehaviour
     {
         if (deckBuilderList.Count < 5 && !dieSelectButtonClicked)
         {
+            PlaySound("buttonPress", 0.75f);
             deckBuilderList.Add(selected);
             dieSelectButtonClicked = true;
         }
@@ -276,6 +282,7 @@ public class TheGameMaster : MonoBehaviour
     {
         if (deckBuilderList.Count > 0 && !dieSelectButtonClicked)
         {
+            PlaySound("buttonPress", 0.75f);
             deckBuilderList.RemoveAt(deckBuilderList.Count - 1);
             dieSelectButtonClicked = true;
         }
@@ -285,6 +292,7 @@ public class TheGameMaster : MonoBehaviour
     {
         if (deckBuilderList.Count == 5 && !dieSelectButtonClicked && !isDoneSelectingDice)
         {
+            PlaySound("buttonPress", 0.75f);
             isDoneSelectingDice = true;
             dieSelectButtonClicked = true;
         }
@@ -452,6 +460,8 @@ public class TheGameMaster : MonoBehaviour
     {
         if (rollButtonCooldown) { return; }
 
+        PlaySound("buttonPress", 0.75f);
+
         PlayerField player = (currentTurn == PlayerCode.P1 ? playerField1 : playerField2);
 
         if (rollsLeft > 0 && (firstRoll || player.DoesCurrentRollsFieldHaveDice()) && (currentPhase == GamePhase.ACTION || currentPhase == GamePhase.NUMBER))
@@ -483,6 +493,7 @@ public class TheGameMaster : MonoBehaviour
     {
         if (!changePhase)
         {
+            PlaySound("buttonPress", 0.75f);
             changePhase = true;
         }
     }
@@ -673,6 +684,7 @@ public class TheGameMaster : MonoBehaviour
                         yield return StartCoroutine(WaitForInput());
                         damage = (thisPlayerPower * 2);
                         announcerText.text = $"{thisPlayerString} dealt a boosted {damage} damage to {otherPlayerString}!";
+                        PlaySound("shipCritDamage", 0.75f);
                         bool isDead = DealDamageTo(otherPlayer, damage, otherAction == SideType.GUARD);
                         (otherPlayer == PlayerCode.P1 ? p1Healthbar : p2Healthbar).DamageShip();
                         if (isDead) { yield break; }
@@ -688,6 +700,7 @@ public class TheGameMaster : MonoBehaviour
                         damage = (otherPlayerPower - thisPlayerPower);
                         if (damage < 0) { damage = 0; }
                         announcerText.text = $"{thisPlayerString} held on and took {damage} damage!";
+                        PlaySound("shipBlock", 0.85f);
                         DealDamageTo(current, damage, thisAction == SideType.GUARD);
                         (current == PlayerCode.P1 ? p1Healthbar : p2Healthbar).DamageShip();
                         break;
@@ -701,6 +714,7 @@ public class TheGameMaster : MonoBehaviour
                         yield return StartCoroutine(WaitForInput());
                         int healing = (thisPlayerPower + BONUS_HEALING);
                         announcerText.text = $"{thisPlayerString} recovered a boosted {healing} life points!";
+                        PlaySound("shipCritHeal", 0.85f);
                         RestoreLifePointsTo(current, healing);
                         break;
                 }
@@ -718,6 +732,7 @@ public class TheGameMaster : MonoBehaviour
                         yield return StartCoroutine(WaitForInput());
                         int damage = thisPlayerPower;
                         announcerText.text = $"{otherPlayerString} took {damage} damage!";
+                        PlaySound("shipDamage", 0.75f);
                         bool isDead = DealDamageTo(otherPlayer, damage, otherAction == SideType.GUARD);
                         (otherPlayer == PlayerCode.P1 ? p1Healthbar : p2Healthbar).DamageShip();
                         if (isDead) { yield break; }
@@ -734,6 +749,7 @@ public class TheGameMaster : MonoBehaviour
                         yield return StartCoroutine(WaitForInput());
                         int healing = thisPlayerPower;
                         announcerText.text = $"{thisPlayerString} recovered {healing} life points!";
+                        PlaySound("shipHeal", 0.85f);
                         RestoreLifePointsTo(current, healing);
                         break;
                 }
@@ -822,6 +838,7 @@ public class TheGameMaster : MonoBehaviour
     {
         currentPhase = GamePhase.END;
         currentTurn = player;
+        PlaySound("shipDestroyed", 0.65f);
         switch (player)
         {
             case PlayerCode.P1:
@@ -832,6 +849,28 @@ public class TheGameMaster : MonoBehaviour
                 announcerText.text = "Player 2 Wins!";
                 p1Healthbar.SinkShip();
                 break;
+        }
+    }
+
+    public void PlaySound(string clipName, float volume)
+    {
+        AudioClip clipToPlay = SoundLibrary.GetAudioClip(clipName);
+        if (clipToPlay != null)
+        {
+            audioSource.clip = clipToPlay;
+            if (volume > 1f)
+            {
+                audioSource.volume = 1f;
+            }
+            else if (volume < 0f)
+            {
+                audioSource.volume = 0f;
+            }
+            else
+            {
+                audioSource.volume = volume;
+            }
+            audioSource.Play();
         }
     }
 
