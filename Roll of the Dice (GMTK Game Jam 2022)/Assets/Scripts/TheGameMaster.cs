@@ -25,6 +25,8 @@ public class TheGameMaster : MonoBehaviour
     [SerializeField] GameObject evenOrOddButtons;
     [SerializeField] GameObject firstOrSecondButtons;
 
+    [SerializeField] GameObject diceSelectionButtons;
+
     [SerializeField] GameObject rollButton;
     [SerializeField] TMP_Text rollButtonText;
 
@@ -41,6 +43,10 @@ public class TheGameMaster : MonoBehaviour
 
     [SerializeField] Healthbar p1Healthbar;
     [SerializeField] Healthbar p2Healthbar;
+
+    private List<ActDie_SO> deckBuilderList = new List<ActDie_SO>();
+    private bool isDoneSelectingDice = false;
+    private bool dieSelectButtonClicked = false;
 
     private const int MAX_LIFE_POINTS = 100;
     private const int BONUS_HEALING = 1;
@@ -190,26 +196,87 @@ public class TheGameMaster : MonoBehaviour
                 if (isFirstClicked)
                 {
                     firstPlayer = PlayerCode.P1;
-                    StartCoroutine(ActionPhase(PlayerCode.P1));
                 }
                 else
                 {
                     firstPlayer = PlayerCode.P2;
-                    StartCoroutine(ActionPhase(PlayerCode.P2));
                 }
                 break;
             case PlayerCode.P2:
                 if (isFirstClicked)
                 {
                     firstPlayer = PlayerCode.P2;
-                    StartCoroutine(ActionPhase(PlayerCode.P2));
                 }
                 else
                 {
                     firstPlayer = PlayerCode.P1;
-                    StartCoroutine(ActionPhase(PlayerCode.P1));
                 }
                 break;
+        }
+        currentTurn = firstPlayer;
+        StartCoroutine(Deckbuilder());
+    }
+
+    public IEnumerator Deckbuilder()
+    {
+        diceSelectionButtons.SetActive(true);
+
+        for (int i = 0; i < 2; ++i)
+        {
+            PlayerField currentPlayer = (currentTurn == PlayerCode.P1 ? playerField1 : playerField2);
+            deckBuilderList.Clear();
+            isDoneSelectingDice = false;
+
+            do
+            {
+                int diceLeft = (5 - deckBuilderList.Count);
+                announcerText.text = $"{(currentTurn == PlayerCode.P1 ? "Player 1" : "Player 2")}, choose {diceLeft} more dice to use, then press NEXT.";
+
+                while (!dieSelectButtonClicked)
+                {
+                    yield return null;
+                }
+
+                dieSelectButtonClicked = false;
+            }
+            while (!isDoneSelectingDice);
+
+            currentPlayer.SetDiceDeck(deckBuilderList.ToArray());
+
+            currentTurn = (currentTurn == PlayerCode.P1 ? PlayerCode.P2 : PlayerCode.P1);
+        }
+
+        diceSelectionButtons.SetActive(false);
+        isDoneSelectingDice = false;
+        deckBuilderList.Clear();
+        currentTurn = firstPlayer;
+        StartCoroutine(ActionPhase(firstPlayer));
+    }
+
+    public void DieSelectButtonClicked(ActDie_SO selected)
+    {
+        if (deckBuilderList.Count < 5 && !dieSelectButtonClicked)
+        {
+            deckBuilderList.Add(selected);
+            dieSelectButtonClicked = true;
+        }
+    }
+
+    public void DieCancelButtonClicked()
+    {
+        if (deckBuilderList.Count > 0 && !dieSelectButtonClicked)
+        {
+            deckBuilderList.RemoveAt(deckBuilderList.Count - 1);
+            dieSelectButtonClicked = true;
+        }
+    }
+
+    public void ConfirmDiceButtonClicked()
+    {
+        if (deckBuilderList.Count == 5 && !dieSelectButtonClicked && !isDoneSelectingDice)
+        {
+            isDoneSelectingDice = true;
+            dieSelectButtonClicked = true;
         }
     }
 

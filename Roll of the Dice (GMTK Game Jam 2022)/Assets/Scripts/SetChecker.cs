@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public enum SetName { NONE, THREE_OF_A_KIND, FOUR_OF_A_KIND, FULL_HOUSE, SMALL_STRAIGHT, LARGE_STRAIGHT, YACHT }
+public enum SetName { NONE, THREE_OF_A_KIND, FOUR_OF_A_KIND, FULL_HOUSE, LITTLE_STRAIGHT, BIG_STRAIGHT, YACHT }
 
 public class SetChecker : MonoBehaviour
 {
@@ -22,17 +22,13 @@ public class SetChecker : MonoBehaviour
         {
             return SetName.FULL_HOUSE;
         }
-        else if (IsThreeOfAKind(set, ref bonusArray))
+        else if (IsLittleStraight(set, ref bonusArray))
         {
-            return SetName.THREE_OF_A_KIND;
+            return SetName.LITTLE_STRAIGHT;
         }
-        else if (IsSmallStraight(set, ref bonusArray))
+        else if (IsBigStraight(set, ref bonusArray))
         {
-            return SetName.SMALL_STRAIGHT;
-        }
-        else if (IsLargeStraight(set, ref bonusArray))
-        {
-            return SetName.LARGE_STRAIGHT;
+            return SetName.BIG_STRAIGHT;
         }
         else
         {
@@ -53,9 +49,9 @@ public class SetChecker : MonoBehaviour
                 return "Four-of-a-Kind";
             case SetName.FULL_HOUSE:
                 return "Full House";
-            case SetName.SMALL_STRAIGHT:
+            case SetName.LITTLE_STRAIGHT:
                 return "Small Straight";
-            case SetName.LARGE_STRAIGHT:
+            case SetName.BIG_STRAIGHT:
                 return "Large Straight";
             case SetName.YACHT:
                 return "Yacht!";
@@ -69,29 +65,29 @@ public class SetChecker : MonoBehaviour
         if (set.Length != 5) { return false; }
         if (set[0] == set[1] && set[1] == set[2] && set[2] == set[3] && set[3] == set[4])
         {
-            bonusArray = new int[] { 4, 4, 4, 4, 4 };
+            bonusArray = new int[] { 6, 6, 6, 6, 6 };
             return true;
         }
         return false;
     }
 
-    private static bool IsLargeStraight(int[] set, ref int[] bonusArray)
+    private static bool IsBigStraight(int[] set, ref int[] bonusArray)
     {
         if (set.Length != 5) { return false; }
         if ((set[0] == 2 && set[1] == 3 && set[2] == 4 && set[3] == 5 && set[4] == 6) || (set[0] == 6 && set[1] == 5 && set[2] == 4 && set[3] == 3 && set[4] == 2))
         {
-            bonusArray = new int[] { 3, 3, 3, 3, 3 };
+            bonusArray = new int[] { 5, 5, 5, 5, 5 };
             return true;
         }
         return false;
     }
 
-    private static bool IsSmallStraight(int[] set, ref int[] bonusArray)
+    private static bool IsLittleStraight(int[] set, ref int[] bonusArray)
     {
         if (set.Length != 5) { return false; }
         if ((set[0] == 1 && set[1] == 2 && set[2] == 3 && set[3] == 4 && set[4] == 5) || (set[0] == 5 && set[1] == 4 && set[2] == 3 && set[3] == 2 && set[4] == 1))
         {
-            bonusArray = new int[] { 2, 2, 2, 2, 2 };
+            bonusArray = new int[] { 4, 4, 4, 4, 4 };
             return true;
         }
         return false;
@@ -106,10 +102,10 @@ public class SetChecker : MonoBehaviour
             if (set[i] == set[i + 1] && set[i + 1] == set[i + 2] && set[i + 2] == set[i + 3])
             {
                 bonusArray = new int[] { 0, 0, 0, 0, 0 };
-                bonusArray[i] = 2;
-                bonusArray[i + 1] = 2;
-                bonusArray[i + 2] = 2;
-                bonusArray[i + 3] = 2;
+                bonusArray[i] = 4;
+                bonusArray[i + 1] = 4;
+                bonusArray[i + 2] = 4;
+                bonusArray[i + 3] = 4;
                 return true;
             }
         }
@@ -141,24 +137,6 @@ public class SetChecker : MonoBehaviour
             {
                 bonusArray[i] = 2;
                 bonusArray[i + 1] = 2;
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private static bool IsThreeOfAKind(int[] set, ref int[] bonusArray)
-    {
-        if (set.Length != 5) { return false; }
-
-        for (int i = 0; i < 3; ++i)
-        {
-            if (set[i] == set[i + 1] && set[i + 1] == set[i + 2])
-            {
-                bonusArray = new int[] { 0, 0, 0, 0, 0 };
-                bonusArray[i] = 3;
-                bonusArray[i + 1] = 3;
-                bonusArray[i + 2] = 3;
                 return true;
             }
         }

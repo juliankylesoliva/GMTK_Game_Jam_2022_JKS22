@@ -30,4 +30,13 @@ public class DiceDeck_SO : ScriptableObject
                 return null;
         }
     }
+
+    public void ChangeDice(ActDie_SO[] dieList)
+    {
+        actionDie1 = dieList[0];
+        actionDie2 = dieList[1];
+        actionDie3 = dieList[2];
+        actionDie4 = dieList[3];
+        actionDie5 = dieList[4];
+    }
 }

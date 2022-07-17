@@ -21,6 +21,11 @@ public class PlayerField : MonoBehaviour
         CheckIfDiceClickedOn();
     }
 
+    public void SetDiceDeck(ActDie_SO[] diceList)
+    {
+        diceDeck.ChangeDice(diceList);
+    }
+
     public void RollActionDice()
     {
         for (int i = 0; i < 5; ++i)
