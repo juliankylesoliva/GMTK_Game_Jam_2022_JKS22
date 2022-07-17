@@ -2187,6 +2187,7 @@ GameObject:
   m_Component:
   - component: {fileID: 430147919}
   - component: {fileID: 430147918}
+  - component: {fileID: 430147920}
   m_Layer: 0
   m_Name: WaterBackground
   m_TagString: Untagged
@@ -2261,6 +2262,25 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 8
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &430147920
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 430147917}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4248f830290dc634fa1680eb9f4ade6a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  idleAmplitude: 0.125
+  idleRadiansPerSecond: 1.570796
+  radsPerSecDeviation: 0.5
+  changeSpriteAfterEveryXFrames: 30
+  spriteList:
+  - {fileID: 21300000, guid: 549dd17b72f652c4a84843d0a624d409, type: 3}
+  - {fileID: 21300000, guid: 480d61be923d2fc4482e1582d9ce52f1, type: 3}
 --- !u!1 &436881373
 GameObject:
   m_ObjectHideFlags: 0
@@ -4380,6 +4400,7 @@ GameObject:
   m_Component:
   - component: {fileID: 973474626}
   - component: {fileID: 973474625}
+  - component: {fileID: 973474627}
   m_Layer: 0
   m_Name: SkyBackground
   m_TagString: Untagged
@@ -4429,7 +4450,7 @@ SpriteRenderer:
   m_SortingLayer: -1
   m_SortingOrder: 0
   m_Sprite: {fileID: 21300000, guid: 07358a348a69d9545bb1383016193b73, type: 3}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 0.21176472, g: 0.18823531, b: 0.50980395, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
@@ -4454,6 +4475,24 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 11
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &973474627
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 973474624}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5ee5fac7d49342e45abdfe8da323f4a1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  skyColors:
+  - {r: 0.81960785, g: 0.59607846, b: 0.29803923, a: 1}
+  - {r: 0.8784314, g: 0.73333335, b: 0.5411765, a: 1}
+  - {r: 1, g: 1, b: 1, a: 1}
+  - {r: 0.3254902, g: 0.29803923, b: 0.6901961, a: 1}
+  - {r: 0.21176471, g: 0.1882353, b: 0.50980395, a: 1}
 --- !u!1 &983711563
 GameObject:
   m_ObjectHideFlags: 0
@@ -6925,7 +6964,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   gameMode: 1
-  startingLifePoints: 1
+  startingLifePoints: 100
   strikeColor: {r: 0.7843138, g: 0.24313727, b: 0.24313727, a: 1}
   guardColor: {r: 0.11764707, g: 0.2901961, b: 0.6156863, a: 1}
   supportColor: {r: 0.38823533, g: 0.7686275, b: 0.27450982, a: 1}
@@ -6946,6 +6985,7 @@ MonoBehaviour:
   p2PowerText: {fileID: 1552475109}
   p1Healthbar: {fileID: 731613365}
   p2Healthbar: {fileID: 363295723}
+  skyBackground: {fileID: 973474627}
 --- !u!1 &1518021671
 GameObject:
   m_ObjectHideFlags: 0

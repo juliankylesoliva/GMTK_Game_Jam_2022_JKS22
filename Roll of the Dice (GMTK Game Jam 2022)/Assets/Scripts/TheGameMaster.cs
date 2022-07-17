@@ -44,6 +44,8 @@ public class TheGameMaster : MonoBehaviour
     [SerializeField] Healthbar p1Healthbar;
     [SerializeField] Healthbar p2Healthbar;
 
+    [SerializeField] SkyColors skyBackground;
+
     private List<ActDie_SO> deckBuilderList = new List<ActDie_SO>();
     private bool isDoneSelectingDice = false;
     private bool dieSelectButtonClicked = false;
@@ -483,6 +485,8 @@ public class TheGameMaster : MonoBehaviour
 
         for (int i = 0; i < 5; ++i)
         {
+            skyBackground.ChangeSkyColor(i);
+
             ActionDieObj p1ActDie = playerField1.TakeNextActionDie();
             DieObj p1NumDie = playerField1.TakeNextNumberDie();
             SideType p1Action = p1ActDie.GetCurrentSideType();

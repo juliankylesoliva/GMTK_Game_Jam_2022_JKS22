@@ -43,16 +43,14 @@ public class SetChecker : MonoBehaviour
         {
             case SetName.NONE:
                 return "No Bonus";
-            case SetName.THREE_OF_A_KIND:
-                return "Three-of-a-Kind";
             case SetName.FOUR_OF_A_KIND:
                 return "Four-of-a-Kind";
             case SetName.FULL_HOUSE:
                 return "Full House";
             case SetName.LITTLE_STRAIGHT:
-                return "Small Straight";
+                return "Little Straight";
             case SetName.BIG_STRAIGHT:
-                return "Large Straight";
+                return "Big Straight";
             case SetName.YACHT:
                 return "Yacht!";
             default:
