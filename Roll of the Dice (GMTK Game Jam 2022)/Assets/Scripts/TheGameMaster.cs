@@ -39,6 +39,9 @@ public class TheGameMaster : MonoBehaviour
     [SerializeField] TMP_Text p1PowerText;
     [SerializeField] TMP_Text p2PowerText;
 
+    [SerializeField] Healthbar p1Healthbar;
+    [SerializeField] Healthbar p2Healthbar;
+
     private const int MAX_LIFE_POINTS = 100;
     private const int BONUS_HEALING = 1;
 
@@ -79,9 +82,11 @@ public class TheGameMaster : MonoBehaviour
     {
         p1LPText.text = $"P1\n{p1CurrentLP} LP";
         p1LPText.color = (currentPhase != GamePhase.BATTLE && currentTurn == PlayerCode.P1 && flashCounter > 30 ? Color.blue : Color.white);
+        p1Healthbar.SetFillScale((float)p1CurrentLP / (float)p1MaxLP);
 
         p2LPText.text = $"P2\n{p2CurrentLP} LP";
         p2LPText.color = (currentPhase != GamePhase.BATTLE && currentTurn == PlayerCode.P2 && flashCounter > 30 ? Color.red : Color.white);
+        p2Healthbar.SetFillScale((float)p2CurrentLP / (float)p2MaxLP);
 
         if (flashCounter > 0)
         {
