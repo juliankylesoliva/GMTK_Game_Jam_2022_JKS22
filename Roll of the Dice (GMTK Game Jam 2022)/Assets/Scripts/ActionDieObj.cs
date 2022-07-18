@@ -4,6 +4,8 @@ using UnityEngine;
 
 public class ActionDieObj : DieObj
 {
+    [SerializeField] DiePreview dieSidesPreview;
+
     private SideType[] dieSides;
 
     private int strength = 0;
@@ -78,12 +80,32 @@ public class ActionDieObj : DieObj
                 spriteRenderer.sprite = sideSprites[3];
             }
         }
+
+        CheckIfMouseover();
+    }
+
+    private void CheckIfMouseover()
+    {
+        RaycastHit2D hit = Physics2D.Raycast(Camera.main.ScreenToWorldPoint(Input.mousePosition), Vector2.zero);
+        if (hit.collider != null)
+        {
+            GameObject tempDie = hit.transform.gameObject;
+            if (tempDie != null)
+            {
+                dieSidesPreview.gameObject.SetActive(GameObject.ReferenceEquals(this.gameObject, tempDie));
+            }
+        }
+        else
+        {
+            dieSidesPreview.gameObject.SetActive(false);
+        }
     }
 
     public void Setup(ActDie_SO adso, int id)
     {
         dieSides = adso.SideList;
         dieID = id;
+        dieSidesPreview.SetSides(dieSides);
     }
 
     public SideType GetCurrentSideType()
@@ -115,4 +137,5 @@ public class ActionDieObj : DieObj
 
         return new float[] { (float)numStrike / 6f, (float)numGuard / 6f, (float)numSupport / 6f };
     }
+
 }
