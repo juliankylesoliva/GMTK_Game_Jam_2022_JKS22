@@ -56,7 +56,6 @@ public class TheGameMaster : MonoBehaviour
     private bool dieSelectButtonClicked = false;
 
     private const int MAX_LIFE_POINTS = 100;
-    private const int BONUS_HEALING = 1;
 
     private static PlayerCode currentTurn;
     private PlayerCode firstPlayer;
@@ -672,6 +671,7 @@ public class TheGameMaster : MonoBehaviour
                 p2PowerText.gameObject.SetActive(true);
                 otherPlayerPowerText.fontSize = 20f;
                 int damage = 0;
+                bool isDead = false;
                 switch (thisAction)
                 {
                     case SideType.STRIKE:
@@ -682,10 +682,10 @@ public class TheGameMaster : MonoBehaviour
 
                         announcerText.text = $"{thisPlayerString} stopped {otherPlayerString}'s healing by attacking!";
                         yield return StartCoroutine(WaitForInput());
-                        damage = (thisPlayerPower * 2);
+                        damage = ((thisPlayerPower + otherPlayerPower) * 2);
                         announcerText.text = $"{thisPlayerString} dealt a boosted {damage} damage to {otherPlayerString}!";
                         PlaySound("shipCritDamage", 0.75f);
-                        bool isDead = DealDamageTo(otherPlayer, damage, otherAction == SideType.GUARD);
+                        isDead = DealDamageTo(otherPlayer, damage, otherAction == SideType.GUARD);
                         (otherPlayer == PlayerCode.P1 ? p1Healthbar : p2Healthbar).DamageShip();
                         if (isDead) { yield break; }
                         break;
@@ -703,6 +703,13 @@ public class TheGameMaster : MonoBehaviour
                         PlaySound("shipBlock", 0.85f);
                         DealDamageTo(current, damage, thisAction == SideType.GUARD);
                         (current == PlayerCode.P1 ? p1Healthbar : p2Healthbar).DamageShip();
+                        yield return StartCoroutine(WaitForInput());
+                        damage = (otherPlayerPower > thisPlayerPower ? thisPlayerPower : otherPlayerPower);
+                        announcerText.text = $"{thisPlayerString} reflected {damage} damage to {otherPlayerString}!";
+                        PlaySound("shipDamage", 0.75f);
+                        isDead = DealDamageTo(otherPlayer, damage, otherAction == SideType.GUARD);
+                        (otherPlayer == PlayerCode.P1 ? p1Healthbar : p2Healthbar).DamageShip();
+                        if (isDead) { yield break; }
                         break;
                     case SideType.SUPPORT:
                         announcerText.color = supportColor;
@@ -710,9 +717,9 @@ public class TheGameMaster : MonoBehaviour
                         thisPlayerPowerText.color = supportColor;
                         otherPlayerPowerText.color = guardColor;
 
-                        announcerText.text = $"{thisPlayerString} healed while {otherPlayerString} defended!";
+                        announcerText.text = $"{thisPlayerString} used {otherPlayerString}'s defense to heal!";
                         yield return StartCoroutine(WaitForInput());
-                        int healing = (thisPlayerPower + BONUS_HEALING);
+                        int healing = (thisPlayerPower + otherPlayerPower);
                         announcerText.text = $"{thisPlayerString} recovered a boosted {healing} life points!";
                         PlaySound("shipCritHeal", 0.85f);
                         RestoreLifePointsTo(current, healing);
