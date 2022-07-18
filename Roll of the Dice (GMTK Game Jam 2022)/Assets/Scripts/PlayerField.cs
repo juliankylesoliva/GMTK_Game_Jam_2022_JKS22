@@ -18,6 +18,8 @@ public class PlayerField : MonoBehaviour
     private ActionDieObj[] actionDiceRefs = new ActionDieObj[5];
     private DieObj[] numberDiceRefs = new DieObj[5];
 
+    private bool enablePlayerControl = true;
+
     void Awake()
     {
         audioSource = this.gameObject.GetComponent<AudioSource>();
@@ -25,7 +27,10 @@ public class PlayerField : MonoBehaviour
 
     void Update()
     {
-        CheckIfDiceClickedOn();
+        if (enablePlayerControl)
+        {
+            CheckIfDiceClickedOn();
+        }
     }
 
     public void SetDiceDeck(ActDie_SO[] diceList)
@@ -220,6 +225,11 @@ public class PlayerField : MonoBehaviour
     private bool IsItMyTurnYet()
     {
         return playerCode == TheGameMaster.GetCurrentTurn();
+    }
+
+    public void SetPlayerControl(bool b)
+    {
+        enablePlayerControl = b;
     }
 
     public void PlaySound(string clipName, float volume)

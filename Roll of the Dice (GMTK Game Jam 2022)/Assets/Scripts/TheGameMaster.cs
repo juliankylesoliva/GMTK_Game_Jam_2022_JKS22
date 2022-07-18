@@ -11,7 +11,6 @@ public enum PlayerAdvantage { PLAYER_ONE, PLAYER_TWO, NEUTRAL }
 
 public class TheGameMaster : MonoBehaviour
 {
-    [SerializeField] GameMode gameMode = GameMode.SHARED_2PLAYER;
     [SerializeField, Range(1, 100)] int startingLifePoints = 100;
 
     [SerializeField] Color strikeColor;
@@ -23,9 +22,12 @@ public class TheGameMaster : MonoBehaviour
 
     [SerializeField] TMP_Text announcerText;
 
+    [SerializeField] GameObject gameModeButtons;
+
     [SerializeField] GameObject evenOrOddButtons;
     [SerializeField] GameObject firstOrSecondButtons;
 
+    [SerializeField] DiePreview dicePreviewDisplay;
     [SerializeField] GameObject diceSelectionButtons;
 
     [SerializeField] GameObject rollButton;
@@ -49,7 +51,10 @@ public class TheGameMaster : MonoBehaviour
 
     [SerializeField] GameObject menuPanel;
 
+    ComputerPlayer computerPlayer;
     AudioSource audioSource;
+
+    private GameMode gameMode = GameMode.SHARED_2PLAYER;
 
     private List<ActDie_SO> deckBuilderList = new List<ActDie_SO>();
     private bool isDoneSelectingDice = false;
@@ -78,6 +83,7 @@ public class TheGameMaster : MonoBehaviour
     {
         Application.targetFrameRate = 60;
         audioSource = this.gameObject.GetComponent<AudioSource>();
+        computerPlayer = this.gameObject.GetComponent<ComputerPlayer>();
     }
 
     void Start()
@@ -88,7 +94,7 @@ public class TheGameMaster : MonoBehaviour
         p2MaxLP = MAX_LIFE_POINTS;
         p2CurrentLP = startingLifePoints;
 
-        CoinFlipSetup();
+        GameModePrompt();
     }
 
     void Update()
@@ -126,10 +132,31 @@ public class TheGameMaster : MonoBehaviour
         return currentPhase;
     }
 
+    private void GameModePrompt()
+    {
+        announcerText.text = "Pick a game mode!";
+        gameModeButtons.SetActive(true);
+    }
+
+    public void SelectGameMode(int mode)
+    {
+        gameModeButtons.SetActive(false);
+        gameMode = (GameMode)mode;
+        if (gameMode == GameMode.VS_COMPUTER)
+        {
+            currentTurn = PlayerCode.P1;
+            AskFirstOrSecond();
+        }
+        else
+        {
+            CoinFlipSetup();
+        }
+    }
+
     private void CoinFlipSetup()
     {
         currentPhase = GamePhase.SETUP;
-        if (gameMode == GameMode.VS_COMPUTER || Random.Range(0, 2) == 0)
+        if (Random.Range(0, 2) == 0)
         {
             currentTurn = PlayerCode.P1;
             announcerText.text = "Player 1, call the die roll!";
@@ -167,13 +194,15 @@ public class TheGameMaster : MonoBehaviour
                     currentTurn = PlayerCode.P1;
                     announcerText.text = "Player 1 won the die roll!";
                     yield return new WaitForSeconds(2.0f);
-                    announcerText.text = "Player 1, would you like to go first?\n(You will reroll fewer times if you do...)";
+                    GameObject.Destroy(tempDie.gameObject);
+                    AskFirstOrSecond();
                     break;
                 case PlayerCode.P2:
                     currentTurn = PlayerCode.P2;
                     announcerText.text = "Player 2 won the die roll!";
                     yield return new WaitForSeconds(2.0f);
-                    announcerText.text = "Player 2, would you like to go first?\n(You will reroll fewer times if you do...)";
+                    GameObject.Destroy(tempDie.gameObject);
+                    AskFirstOrSecond();
                     break;
             }
         }
@@ -185,18 +214,23 @@ public class TheGameMaster : MonoBehaviour
                     currentTurn = PlayerCode.P2;
                     announcerText.text = "Player 2 won the die roll!";
                     yield return new WaitForSeconds(2.0f);
-                    announcerText.text = "Player 2, would you like to go first?\n(You will reroll fewer times if you do...)";
+                    GameObject.Destroy(tempDie.gameObject);
+                    AskFirstOrSecond();
                     break;
                 case PlayerCode.P2:
                     currentTurn = PlayerCode.P1;
                     announcerText.text = "Player 1 won the die roll!";
                     yield return new WaitForSeconds(2.0f);
-                    announcerText.text = "Player 1, would you like to go first?\n(You will reroll fewer times if you do...)";
+                    GameObject.Destroy(tempDie.gameObject);
+                    AskFirstOrSecond();
                     break;
             }
         }
+    }
 
-        GameObject.Destroy(tempDie.gameObject);
+    private void AskFirstOrSecond()
+    {
+        announcerText.text = $"{(currentTurn == PlayerCode.P1 ? "Player 1" : "Player2")}, would you like to go first?\n(You will reroll fewer times if you do...)";
         firstOrSecondButtons.SetActive(true);
     }
 
@@ -233,18 +267,33 @@ public class TheGameMaster : MonoBehaviour
 
     public IEnumerator Deckbuilder()
     {
-        diceSelectionButtons.SetActive(true);
-
         for (int i = 0; i < 2; ++i)
         {
             PlayerField currentPlayer = (currentTurn == PlayerCode.P1 ? playerField1 : playerField2);
             deckBuilderList.Clear();
             isDoneSelectingDice = false;
 
+            if (gameMode == GameMode.SHARED_2PLAYER || (gameMode == GameMode.VS_COMPUTER && currentTurn == PlayerCode.P1))
+            {
+                diceSelectionButtons.SetActive(true);
+                for (int j = 0; j < diceSelectionButtons.transform.childCount; ++i)
+                {
+                    diceSelectionButtons.transform.GetChild(i).gameObject.SetActive(true);
+                }
+            }
+
+            bool isComputerPlayerChoosing = false;
+
             do
             {
                 int diceLeft = (5 - deckBuilderList.Count);
                 announcerText.text = $"{(currentTurn == PlayerCode.P1 ? "Player 1" : "Player 2")}, choose {diceLeft} more dice to use, then press NEXT.";
+
+                if (!isComputerPlayerChoosing)
+                {
+                    isComputerPlayerChoosing = true;
+                    computerPlayer.ChooseDice();
+                }
 
                 while (!dieSelectButtonClicked)
                 {
@@ -282,7 +331,11 @@ public class TheGameMaster : MonoBehaviour
         if (deckBuilderList.Count > 0 && !dieSelectButtonClicked)
         {
             PlaySound("buttonPress", 0.75f);
-            deckBuilderList.RemoveAt(deckBuilderList.Count - 1);
+            deckBuilderList.Clear();
+            for (int i = 0; i < diceSelectionButtons.transform.childCount; ++i)
+            {
+                diceSelectionButtons.transform.GetChild(i).gameObject.SetActive(true);
+            }
             dieSelectButtonClicked = true;
         }
     }
