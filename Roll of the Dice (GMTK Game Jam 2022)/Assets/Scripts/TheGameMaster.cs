@@ -142,6 +142,11 @@ public class TheGameMaster : MonoBehaviour
         return (player == PlayerCode.P1 ? p1CurrentLP : p2CurrentLP);
     }
 
+    public PlayerField GetPlayerField(PlayerCode player)
+    {
+        return (player == PlayerCode.P1 ? playerField1 : playerField2);
+    }
+
     private void GameModePrompt()
     {
         announcerText.text = "Pick a game mode!";
@@ -314,12 +319,13 @@ public class TheGameMaster : MonoBehaviour
             }
             while (!isDoneSelectingDice);
 
+            diceSelectionButtons.SetActive(false);
+
             currentPlayer.SetDiceDeck(deckBuilderList.ToArray());
 
             currentTurn = (currentTurn == PlayerCode.P1 ? PlayerCode.P2 : PlayerCode.P1);
         }
 
-        diceSelectionButtons.SetActive(false);
         isDoneSelectingDice = false;
         deckBuilderList.Clear();
         currentTurn = firstPlayer;
@@ -389,8 +395,12 @@ public class TheGameMaster : MonoBehaviour
         else
         {
             bool isComputerFirst = (currentTurn == firstPlayer);
-
-            computerPlayer.DoActionPhase(isComputerFirst, null);
+            SideType[] opposingActions = null;
+            if (!isComputerFirst)
+            {
+                opposingActions = GetPlayerField((currentTurn == PlayerCode.P1 ? PlayerCode.P2 : PlayerCode.P1)).ActionOrderTypes;
+            }
+            computerPlayer.DoActionPhase(isComputerFirst, opposingActions);
         }
         
 
@@ -411,7 +421,6 @@ public class TheGameMaster : MonoBehaviour
                     {
                         rollButton.SetActive(true);
                     }
-
                 }
             }
 

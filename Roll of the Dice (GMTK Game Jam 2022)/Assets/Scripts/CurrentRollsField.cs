@@ -103,6 +103,24 @@ public class CurrentRollsField : MonoBehaviour
         return result;
     }
 
+    public SideType[] GetDiceActionArray()
+    {
+        SideType[] result = new SideType[5];
+        for (int i = 0; i < 5; ++i)
+        {
+            ActionDieObj tempDie = (ActionDieObj)diceObjArray[i];
+            if (tempDie != null)
+            {
+                result[i] = tempDie.GetCurrentSideType();
+            }
+            else
+            {
+                return null;
+            }
+        }
+        return result;
+    }
+
     public void ClearField()
     {
         for (int i = 0; i < 5; ++i)

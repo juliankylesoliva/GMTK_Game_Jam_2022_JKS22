@@ -9,9 +9,19 @@ public class PlayerField : MonoBehaviour
     [SerializeField] PlayerCode playerCode;
 
     [SerializeField] DiceDeck_SO diceDeck;
+
     [SerializeField] CurrentRollsField currentRollsField;
+    public DieObj[] DiceRolls { get { return currentRollsField.GetDiceObjectArray(); } }
+    public int[] NumberRolls { get { return currentRollsField.GetDiceValueArray(); } }
+    public SideType[] ActionRolls { get { return currentRollsField.GetDiceActionArray(); } }
+
     [SerializeField] OrderField actionOrderField;
+    public DieObj[] ActionOrder { get { return actionOrderField.GetDiceObjectArray(); } }
+    public SideType[] ActionOrderTypes { get { return actionOrderField.GetDiceActionArray(); } }
+
     [SerializeField] OrderField numberOrderField;
+    public DieObj[] NumberOrder { get { return numberOrderField.GetDiceObjectArray(); } }
+    public int[] NumberOrderValues { get { return numberOrderField.GetDiceValueArray(); } }
 
     AudioSource audioSource;
 

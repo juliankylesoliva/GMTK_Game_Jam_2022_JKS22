@@ -5,6 +5,7 @@ using UnityEngine;
 public class ComputerPlayer : MonoBehaviour
 {
     [SerializeField] PlayerCode playerCode = PlayerCode.P2;
+    public PlayerCode PlayerID { get { return playerCode; } }
 
     [SerializeField] DiceDeck_SO overrideDeck = null; // For debug purposes
     [SerializeField] ActDie_SO[] initialDicePool;
@@ -117,17 +118,47 @@ public class ComputerPlayer : MonoBehaviour
     public void DoActionPhase(bool isFirst, SideType[] opposingActions = null)
     {
         StartCoroutine(SelectActions(isFirst, opposingActions));
-
     }
 
     private IEnumerator SelectActions(bool isFirst, SideType[] opposingActions = null)
     {
-        int[] priorityArray = (!isFirst || opposingActions == null ? GetPriorityArray() : GetCounterArray(opposingActions));
+        List<ActionDieObj> actionDiceOrder = new List<ActionDieObj>();
 
         gameMaster.RollButtonClick();
-        yield return new WaitForSeconds(1.5f);
+        yield return new WaitForSeconds(1.25f);
+
+        if (isFirst)
+        {
+            GetDiceOrder(ref actionDiceOrder);
+        }
+        else
+        {
+            GetDiceOrder(ref actionDiceOrder, opposingActions);
+        }
 
         yield return null;
+    }
+
+    private void GetDiceOrder(ref List<ActionDieObj> resultOrder)
+    {
+        int[] priority = GetPriorityArray();
+        PlayerField myField = gameMaster.GetPlayerField(playerCode);
+        DieObj[] diceRolls = myField.DiceRolls;
+
+        foreach (DieObj d in diceRolls)
+        {
+            if (d != null)
+            {
+                resultOrder.Add((ActionDieObj)d);
+            }
+        }
+
+        // Sort the list by removing at an index and adding to the end (reduce the max search length every iteration)
+    }
+
+    private void GetDiceOrder(ref List<ActionDieObj> resultOrder, SideType[] opposingArray)
+    {
+
     }
 
     private int[] GetPriorityArray()
@@ -204,30 +235,5 @@ public class ComputerPlayer : MonoBehaviour
         }
 
         return new int[] { strikePriorityLevel, guardPriorityLevel, supportPriorityLevel };
-    }
-
-    private int[] GetCounterArray(SideType[] opposingArray)
-    {
-        int numStrikes = 0;
-        int numGuards = 0;
-        int numSupports = 0;
-
-        foreach (SideType t in opposingArray)
-        {
-            switch (t)
-            {
-                case SideType.STRIKE:
-                    numStrikes++;
-                    break;
-                case SideType.GUARD:
-                    numGuards++;
-                    break;
-                case SideType.SUPPORT:
-                    numSupports++;
-                    break;
-            }
-        }
-
-        return new int[] { numStrikes, numGuards, numSupports };
     }
 }
