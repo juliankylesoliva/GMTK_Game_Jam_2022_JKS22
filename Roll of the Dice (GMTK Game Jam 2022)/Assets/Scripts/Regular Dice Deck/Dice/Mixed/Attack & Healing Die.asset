@@ -18,3 +18,6 @@ MonoBehaviour:
   side4: 1
   side5: 2
   side6: 2
+  diceType: 1
+  primaryType: 0
+  secondaryType: 2

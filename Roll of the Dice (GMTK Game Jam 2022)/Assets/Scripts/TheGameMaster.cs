@@ -132,6 +132,11 @@ public class TheGameMaster : MonoBehaviour
         return currentPhase;
     }
 
+    public DiceDeck_SO GetPlayerDiceDeck(PlayerCode player)
+    {
+        return (player == PlayerCode.P1 ? playerField1.GetDiceDeck() : playerField2.GetDiceDeck());
+    }
+
     private void GameModePrompt()
     {
         announcerText.text = "Pick a game mode!";
@@ -273,23 +278,22 @@ public class TheGameMaster : MonoBehaviour
             deckBuilderList.Clear();
             isDoneSelectingDice = false;
 
+            bool isComputerPlayerChoosing = false;
             if (gameMode == GameMode.SHARED_2PLAYER || (gameMode == GameMode.VS_COMPUTER && currentTurn == PlayerCode.P1))
             {
                 diceSelectionButtons.SetActive(true);
-                for (int j = 0; j < diceSelectionButtons.transform.childCount; ++i)
+                for (int j = 0; j < diceSelectionButtons.transform.childCount; ++j)
                 {
                     diceSelectionButtons.transform.GetChild(i).gameObject.SetActive(true);
                 }
             }
 
-            bool isComputerPlayerChoosing = false;
-
             do
             {
                 int diceLeft = (5 - deckBuilderList.Count);
                 announcerText.text = $"{(currentTurn == PlayerCode.P1 ? "Player 1" : "Player 2")}, choose {diceLeft} more dice to use, then press NEXT.";
-
-                if (!isComputerPlayerChoosing)
+                
+                if (!isComputerPlayerChoosing && gameMode == GameMode.VS_COMPUTER && currentTurn == PlayerCode.P2)
                 {
                     isComputerPlayerChoosing = true;
                     computerPlayer.ChooseDice();
@@ -324,6 +328,18 @@ public class TheGameMaster : MonoBehaviour
             deckBuilderList.Add(selected);
             dieSelectButtonClicked = true;
         }
+    }
+
+    public void ShowSelectedDie(ActDie_SO selected)
+    {
+        dicePreviewDisplay.gameObject.SetActive(true);
+        dicePreviewDisplay.SetSides(selected);
+    }
+
+    public void HideSelectedDie()
+    {
+        dicePreviewDisplay.ClearSides();
+        dicePreviewDisplay.gameObject.SetActive(false);
     }
 
     public void DieCancelButtonClicked()

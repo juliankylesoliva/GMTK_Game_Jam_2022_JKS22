@@ -38,6 +38,11 @@ public class PlayerField : MonoBehaviour
         diceDeck.ChangeDice(diceList);
     }
 
+    public DiceDeck_SO GetDiceDeck()
+    {
+        return diceDeck;
+    }
+
     public void RollActionDice()
     {
         for (int i = 0; i < 5; ++i)
