@@ -18,7 +18,12 @@ public class PlayerField : MonoBehaviour
     private ActionDieObj[] actionDiceRefs = new ActionDieObj[5];
     private DieObj[] numberDiceRefs = new DieObj[5];
 
-    private bool enablePlayerControl = true;
+    private bool isComputerControlled = false;
+    public bool IsCPU
+    {
+        get { return isComputerControlled; }
+        set { isComputerControlled = value; }
+    }
 
     void Awake()
     {
@@ -27,7 +32,7 @@ public class PlayerField : MonoBehaviour
 
     void Update()
     {
-        if (enablePlayerControl)
+        if (!isComputerControlled)
         {
             CheckIfDiceClickedOn();
         }
@@ -36,11 +41,6 @@ public class PlayerField : MonoBehaviour
     public void SetDiceDeck(ActDie_SO[] diceList)
     {
         diceDeck.ChangeDice(diceList);
-    }
-
-    public DiceDeck_SO GetDiceDeck()
-    {
-        return diceDeck;
     }
 
     public void RollActionDice()
@@ -230,11 +230,6 @@ public class PlayerField : MonoBehaviour
     private bool IsItMyTurnYet()
     {
         return playerCode == TheGameMaster.GetCurrentTurn();
-    }
-
-    public void SetPlayerControl(bool b)
-    {
-        enablePlayerControl = b;
     }
 
     public void PlaySound(string clipName, float volume)

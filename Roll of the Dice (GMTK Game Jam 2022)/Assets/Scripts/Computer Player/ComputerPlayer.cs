@@ -4,8 +4,14 @@ using UnityEngine;
 
 public class ComputerPlayer : MonoBehaviour
 {
+    [SerializeField] PlayerCode playerCode = PlayerCode.P2;
+
     [SerializeField] DiceDeck_SO overrideDeck = null; // For debug purposes
     [SerializeField] ActDie_SO[] initialDicePool;
+
+    [Header("ACTION PRIORITY PARAMETERS")]
+    [SerializeField, Range(0, 99)] int lifePointDifferenceThreshold = 20;
+    [SerializeField, Range(1, 99)] int dangerThreshold = 30;
 
     TheGameMaster gameMaster;
 
@@ -106,5 +112,122 @@ public class ComputerPlayer : MonoBehaviour
             }
         }
         else {/* Nothing */}
+    }
+
+    public void DoActionPhase(bool isFirst, SideType[] opposingActions = null)
+    {
+        StartCoroutine(SelectActions(isFirst, opposingActions));
+
+    }
+
+    private IEnumerator SelectActions(bool isFirst, SideType[] opposingActions = null)
+    {
+        int[] priorityArray = (!isFirst || opposingActions == null ? GetPriorityArray() : GetCounterArray(opposingActions));
+
+        gameMaster.RollButtonClick();
+        yield return new WaitForSeconds(1.5f);
+
+        yield return null;
+    }
+
+    private int[] GetPriorityArray()
+    {
+        int strikePriorityLevel = 0;
+        int guardPriorityLevel = 0;
+        int supportPriorityLevel = 0;
+
+        int lpDiff = gameMaster.GetLPDifference(PlayerCode.P2);
+        if (lpDiff >= lifePointDifferenceThreshold) // AI has more LP remaining than the player.
+        {
+            strikePriorityLevel += 2;
+            guardPriorityLevel += 1;
+        }
+        else if (lpDiff <= -lifePointDifferenceThreshold) // AI has fewer LP remaining than the player.
+        {
+            guardPriorityLevel += 2;
+            supportPriorityLevel += 1;
+        }
+        else // AI has roughly the same amount of LP as the player.
+        {
+            strikePriorityLevel += 1;
+            guardPriorityLevel += 1;
+            supportPriorityLevel += 1;
+        }
+
+        int lpRemaining = gameMaster.GetLPRemaining(PlayerCode.P2);
+        if (lpRemaining <= dangerThreshold)
+        {
+            guardPriorityLevel += 1;
+            supportPriorityLevel += 1;
+        }
+        else if (lpRemaining > dangerThreshold && lpRemaining < TheGameMaster.MAX_LIFE_POINTS)
+        {
+            strikePriorityLevel += 1;
+            guardPriorityLevel += 1;
+        }
+        else
+        {
+            strikePriorityLevel += 2;
+            supportPriorityLevel = 0;
+        }
+
+        int enemyLPRemaining = gameMaster.GetLPRemaining(PlayerCode.P1);
+        if (enemyLPRemaining <= dangerThreshold)
+        {
+            strikePriorityLevel += 2;
+        }
+        else
+        {
+            strikePriorityLevel += 1;
+        }
+
+        int sum = strikePriorityLevel + guardPriorityLevel + supportPriorityLevel;
+
+        if (sum > 5)
+        {
+            for (int i = 0; sum == 5; ++i)
+            {
+                switch (i % 3)
+                {
+                    case 0:
+                        supportPriorityLevel -= (supportPriorityLevel > 1 ? 1 : 0);
+                        break;
+                    case 1:
+                        guardPriorityLevel -= (guardPriorityLevel > 1 ? 1 : 0);
+                        break;
+                    case 2:
+                        strikePriorityLevel -= (strikePriorityLevel > 1 ? 1 : 0);
+                        break;
+                }
+                sum = strikePriorityLevel + guardPriorityLevel + supportPriorityLevel;
+            }
+        }
+
+        return new int[] { strikePriorityLevel, guardPriorityLevel, supportPriorityLevel };
+    }
+
+    private int[] GetCounterArray(SideType[] opposingArray)
+    {
+        int numStrikes = 0;
+        int numGuards = 0;
+        int numSupports = 0;
+
+        foreach (SideType t in opposingArray)
+        {
+            switch (t)
+            {
+                case SideType.STRIKE:
+                    numStrikes++;
+                    break;
+                case SideType.GUARD:
+                    numGuards++;
+                    break;
+                case SideType.SUPPORT:
+                    numSupports++;
+                    break;
+            }
+        }
+
+        return new int[] { numStrikes, numGuards, numSupports };
     }
 }

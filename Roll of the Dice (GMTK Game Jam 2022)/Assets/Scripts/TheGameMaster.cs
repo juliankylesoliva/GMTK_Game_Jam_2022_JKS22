@@ -60,7 +60,7 @@ public class TheGameMaster : MonoBehaviour
     private bool isDoneSelectingDice = false;
     private bool dieSelectButtonClicked = false;
 
-    private const int MAX_LIFE_POINTS = 100;
+    public const int MAX_LIFE_POINTS = 100;
 
     private static PlayerCode currentTurn;
     private PlayerCode firstPlayer;
@@ -132,9 +132,14 @@ public class TheGameMaster : MonoBehaviour
         return currentPhase;
     }
 
-    public DiceDeck_SO GetPlayerDiceDeck(PlayerCode player)
+    public int GetLPDifference(PlayerCode player)
     {
-        return (player == PlayerCode.P1 ? playerField1.GetDiceDeck() : playerField2.GetDiceDeck());
+        return (player == PlayerCode.P1 ? (p1CurrentLP - p2CurrentLP) : (p2CurrentLP - p1CurrentLP));
+    }
+
+    public int GetLPRemaining(PlayerCode player)
+    {
+        return (player == PlayerCode.P1 ? p1CurrentLP : p2CurrentLP);
     }
 
     private void GameModePrompt()
@@ -149,6 +154,7 @@ public class TheGameMaster : MonoBehaviour
         gameMode = (GameMode)mode;
         if (gameMode == GameMode.VS_COMPUTER)
         {
+            playerField2.IsCPU = true;
             currentTurn = PlayerCode.P1;
             AskFirstOrSecond();
         }
@@ -279,7 +285,7 @@ public class TheGameMaster : MonoBehaviour
             isDoneSelectingDice = false;
 
             bool isComputerPlayerChoosing = false;
-            if (gameMode == GameMode.SHARED_2PLAYER || (gameMode == GameMode.VS_COMPUTER && currentTurn == PlayerCode.P1))
+            if (!IsComputerPlayer(currentTurn))
             {
                 diceSelectionButtons.SetActive(true);
                 for (int j = 0; j < diceSelectionButtons.transform.childCount; ++j)
@@ -293,7 +299,7 @@ public class TheGameMaster : MonoBehaviour
                 int diceLeft = (5 - deckBuilderList.Count);
                 announcerText.text = $"{(currentTurn == PlayerCode.P1 ? "Player 1" : "Player 2")}, choose {diceLeft} more dice to use, then press NEXT.";
                 
-                if (!isComputerPlayerChoosing && gameMode == GameMode.VS_COMPUTER && currentTurn == PlayerCode.P2)
+                if (!isComputerPlayerChoosing && IsComputerPlayer(currentTurn))
                 {
                     isComputerPlayerChoosing = true;
                     computerPlayer.ChooseDice();
@@ -376,24 +382,37 @@ public class TheGameMaster : MonoBehaviour
 
         announcerText.text = $"{(currentTurn == PlayerCode.P1 ? "Player 1" : "Player 2")}, roll and choose your Action Dice!";
 
-        rollButton.SetActive(true);
+        if (!IsComputerPlayer(currentTurn))
+        {
+            rollButton.SetActive(true);
+        }
+        else
+        {
+            bool isComputerFirst = (currentTurn == firstPlayer);
+
+            computerPlayer.DoActionPhase(isComputerFirst, null);
+        }
+        
 
         while (!changePhase)
         {
-            if (rollButtonCooldown)
+            if (!IsComputerPlayer(currentTurn))
             {
-                if (rollButton.activeSelf)
+                if (rollButtonCooldown)
                 {
-                    rollButton.SetActive(false);
+                    if (rollButton.activeSelf)
+                    {
+                        rollButton.SetActive(false);
+                    }
                 }
-            }
-            else
-            {
-                if (!rollButton.activeSelf)
+                else
                 {
-                    rollButton.SetActive(true);
-                }
+                    if (!rollButton.activeSelf)
+                    {
+                        rollButton.SetActive(true);
+                    }
 
+                }
             }
 
             if (rollButtonText.gameObject.activeSelf)
@@ -926,6 +945,11 @@ public class TheGameMaster : MonoBehaviour
                 p1Healthbar.SinkShip();
                 break;
         }
+    }
+
+    public bool IsComputerPlayer(PlayerCode player)
+    {
+        return (player == PlayerCode.P1 ? playerField1.IsCPU : playerField2.IsCPU);
     }
 
     public void PlaySound(string clipName, float volume)
