@@ -295,7 +295,7 @@ public class TheGameMaster : MonoBehaviour
                 diceSelectionButtons.SetActive(true);
                 for (int j = 0; j < diceSelectionButtons.transform.childCount; ++j)
                 {
-                    diceSelectionButtons.transform.GetChild(i).gameObject.SetActive(true);
+                    diceSelectionButtons.transform.GetChild(j).gameObject.SetActive(true);
                 }
             }
 

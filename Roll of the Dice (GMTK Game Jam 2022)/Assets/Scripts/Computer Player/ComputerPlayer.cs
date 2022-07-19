@@ -45,20 +45,18 @@ public class ComputerPlayer : MonoBehaviour
                 chosenDie = overrideDeck.GetActionDie(i + 1);
             }
 
-            yield return new WaitForSeconds(0.5f);
+            yield return new WaitForSeconds(0.1f);
 
             gameMaster.DieSelectButtonClicked(chosenDie);
             gameMaster.ShowSelectedDie(chosenDie);
 
-            float timer = 1f;
-            while (!Input.GetMouseButtonDown(0) && timer > 0)
+            while (!Input.GetMouseButtonDown(0))
             {
                 yield return null;
-                timer -= Time.deltaTime;
             }
             gameMaster.HideSelectedDie();
 
-            yield return new WaitForSeconds(0.5f);
+            yield return new WaitForSeconds(0.1f);
         }
 
         gameMaster.ConfirmDiceButtonClicked();
@@ -122,43 +120,106 @@ public class ComputerPlayer : MonoBehaviour
 
     private IEnumerator SelectActions(bool isFirst, SideType[] opposingActions = null)
     {
-        List<ActionDieObj> actionDiceOrder = new List<ActionDieObj>();
-
         gameMaster.RollButtonClick();
         yield return new WaitForSeconds(1.25f);
 
         if (isFirst)
         {
-            GetDiceOrder(ref actionDiceOrder);
+            yield return StartCoroutine(GetActionOrder(GetPriorityArray(), isFirst));
         }
         else
         {
-            GetDiceOrder(ref actionDiceOrder, opposingActions);
+            yield return StartCoroutine(GetActionOrder(GetCounterPriorityArray(opposingActions), !isFirst));
         }
 
         yield return null;
     }
 
-    private void GetDiceOrder(ref List<ActionDieObj> resultOrder)
+    private IEnumerator GetActionOrder(int[] priority, bool isFirst)
     {
-        int[] priority = GetPriorityArray();
         PlayerField myField = gameMaster.GetPlayerField(playerCode);
         DieObj[] diceRolls = myField.DiceRolls;
 
-        foreach (DieObj d in diceRolls)
+        List<KeyValuePair<SideType, int>> priorityOrder = new List<KeyValuePair<SideType, int>>();
+        priorityOrder.Add(new KeyValuePair<SideType, int>(SideType.STRIKE, priority[0])); 
+        priorityOrder.Add(new KeyValuePair<SideType, int>(SideType.GUARD, priority[1]));
+        priorityOrder.Add(new KeyValuePair<SideType, int>(SideType.SUPPORT, priority[2]));
+        
+        for (int i = 0; i < 3; ++i)
         {
-            if (d != null)
+            int biggestIndex = -1;
+            for (int j = 0; j < (3 - i); ++j)
             {
-                resultOrder.Add((ActionDieObj)d);
+                KeyValuePair<SideType, int> currentPair = priorityOrder[i];
+                if (biggestIndex == -1 || (currentPair.Value > priorityOrder[biggestIndex].Value))
+                {
+                    biggestIndex = j;
+                }
             }
+            KeyValuePair<SideType, int> biggestValuedPair = priorityOrder[biggestIndex];
+            priorityOrder.RemoveAt(biggestIndex);
+            priorityOrder.Add(biggestValuedPair);
         }
 
-        // Sort the list by removing at an index and adding to the end (reduce the max search length every iteration)
-    }
+        Debug.Log($"{priorityOrder[0].Key}: {priorityOrder[0].Value} | {priorityOrder[1].Key}: {priorityOrder[1].Value} | {priorityOrder[2].Key}: {priorityOrder[2].Value}");
 
-    private void GetDiceOrder(ref List<ActionDieObj> resultOrder, SideType[] opposingArray)
-    {
+        for (int rolls = (isFirst ? 1 : 2); rolls > 0; --rolls)
+        {
+            List<DieObj> diceRollsList = new List<DieObj>();
+            foreach (DieObj d in diceRolls)
+            {
+                if (d != null)
+                {
+                    myField.TakeDieFromActionOrderField(d.DieID);
+                    yield return new WaitForSeconds(0.1f);
+                }
+                diceRollsList.Add(d);
+            }
 
+            foreach (KeyValuePair<SideType, int> kvp in priorityOrder)
+            {
+                Debug.Log(kvp.Key);
+                bool isStillDiceLeft = true;
+                int numDiceToGet = kvp.Value;
+                while ((numDiceToGet > 0 || rolls == 0) && isStillDiceLeft)
+                {
+                    isStillDiceLeft = false;
+
+                    ActionDieObj selectedDie = null;
+                    float highestProbability = -1f;
+
+                    foreach (DieObj d in diceRollsList)
+                    {
+                        if (d != null)
+                        {
+                            ActionDieObj currentActDie = (ActionDieObj)d;
+                            float currentProbability = currentActDie.GetProbabiltyOfSide(kvp.Key);
+                            if (rolls == 0 || (currentActDie.GetCurrentSideType() == kvp.Key && currentProbability > highestProbability))
+                            {
+                                selectedDie = currentActDie;
+                                highestProbability = currentProbability;
+                                isStillDiceLeft = true;
+                            }
+                        }
+                    }
+
+                    if (selectedDie != null)
+                    {
+                        yield return new WaitForSeconds(0.25f);
+                        diceRollsList.RemoveAt(selectedDie.DieID - 1);
+                        numDiceToGet--;
+                        myField.SendDieToActionOrderField(selectedDie.DieID);
+                    }
+                }
+            }
+
+            if (rolls > 0)
+            {
+                gameMaster.RollButtonClick();
+                yield return new WaitForSeconds(1.25f);
+            }
+        }
+        yield return null;
     }
 
     private int[] GetPriorityArray()
@@ -168,12 +229,12 @@ public class ComputerPlayer : MonoBehaviour
         int supportPriorityLevel = 0;
 
         int lpDiff = gameMaster.GetLPDifference(PlayerCode.P2);
-        if (lpDiff >= lifePointDifferenceThreshold) // AI has more LP remaining than the player.
+        if (lpDiff != 0 && lpDiff >= lifePointDifferenceThreshold) // AI has more LP remaining than the player.
         {
             strikePriorityLevel += 2;
             guardPriorityLevel += 1;
         }
-        else if (lpDiff <= -lifePointDifferenceThreshold) // AI has fewer LP remaining than the player.
+        else if (lpDiff != 0 && lpDiff <= -lifePointDifferenceThreshold) // AI has fewer LP remaining than the player.
         {
             guardPriorityLevel += 2;
             supportPriorityLevel += 1;
@@ -235,5 +296,30 @@ public class ComputerPlayer : MonoBehaviour
         }
 
         return new int[] { strikePriorityLevel, guardPriorityLevel, supportPriorityLevel };
+    }
+
+    private int[] GetCounterPriorityArray(SideType[] opposingActions)
+    {
+        int numStrike = 0;
+        int numGuard = 0;
+        int numSupport = 0;
+
+        foreach (SideType s in opposingActions)
+        {
+            switch (s)
+            {
+                case SideType.STRIKE:
+                    numGuard++;
+                    break;
+                case SideType.GUARD:
+                    numSupport++;
+                    break;
+                case SideType.SUPPORT:
+                    numStrike++;
+                    break;
+            }
+        }
+
+        return new int[] { numStrike, numGuard, numSupport };
     }
 }

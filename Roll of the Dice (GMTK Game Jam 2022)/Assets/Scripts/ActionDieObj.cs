@@ -113,29 +113,14 @@ public class ActionDieObj : DieObj
         return dieSides[currentSideIndex];
     }
 
-    public float[] GetTypeProbabilities()
+    public float GetProbabiltyOfSide(SideType side)
     {
-        int numStrike = 0;
-        int numGuard = 0;
-        int numSupport = 0;
-
-        foreach (SideType side in dieSides)
+        int sum = 0;
+        foreach (SideType s in dieSides)
         {
-            switch (side)
-            {
-                case SideType.STRIKE:
-                    numStrike++;
-                    break;
-                case SideType.GUARD:
-                    numGuard++;
-                    break;
-                case SideType.SUPPORT:
-                    numSupport++;
-                    break;
-            }
+            if (s == side) { sum++; }
         }
-
-        return new float[] { (float)numStrike / 6f, (float)numGuard / 6f, (float)numSupport / 6f };
+        return ((float)sum / (float)dieSides.Length);
     }
 
 }

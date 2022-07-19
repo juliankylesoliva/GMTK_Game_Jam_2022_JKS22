@@ -10063,6 +10063,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: acbfc1f222a836647a48ed943ab82c9f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  playerCode: 1
   overrideDeck: {fileID: 0}
   initialDicePool:
   - {fileID: 11400000, guid: dd50ba5ad2ecf07458ca83f540f29c61, type: 2}
@@ -10075,6 +10076,8 @@ MonoBehaviour:
   - {fileID: 11400000, guid: cfc528250b4cef045b3f3d5e23e64573, type: 2}
   - {fileID: 11400000, guid: f7fbcde91fd229a40819ce53d0cc7476, type: 2}
   - {fileID: 11400000, guid: f39f071407192f54fb607ba3314ecea5, type: 2}
+  lifePointDifferenceThreshold: 20
+  dangerThreshold: 30
 --- !u!1 &1518021671
 GameObject:
   m_ObjectHideFlags: 0

@@ -80,6 +80,19 @@ public class CurrentRollsField : MonoBehaviour
         return true;
     }
 
+    public int GetNumDiceInField()
+    {
+        int sum = 0;
+        foreach (DieObj d in diceObjArray)
+        {
+            if (d != null)
+            {
+                sum++;
+            }
+        }
+        return sum;
+    }
+
     public DieObj[] GetDiceObjectArray()
     {
         return diceObjArray;

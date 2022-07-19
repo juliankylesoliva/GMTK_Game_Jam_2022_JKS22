@@ -178,7 +178,12 @@ public class PlayerField : MonoBehaviour
         return currentRollsField.ContainsDice();
     }
 
-    private void SendDieToActionOrderField(int posNum)
+    public int GetNumDiceInRollsField()
+    {
+        return currentRollsField.GetNumDiceInField();
+    }
+
+    public void SendDieToActionOrderField(int posNum)
     {
         if (posNum < 1 || posNum > 5) { return; }
         PlaySound("diceKeep", 0.85f);
@@ -186,7 +191,7 @@ public class PlayerField : MonoBehaviour
         actionOrderField.PlaceDieInOrderField(tempDie);
     }
 
-    private void TakeDieFromActionOrderField(int id)
+    public void TakeDieFromActionOrderField(int id)
     {
         if (id < 0 || id > 4 || !currentRollsField.IsPositionEmpty(id + 1)) { return; }
         DieObj tempDie = actionOrderField.GetDieFromOrderField(id);
