@@ -455,7 +455,7 @@ public class TheGameMaster : MonoBehaviour
     {
         currentPhase = GamePhase.NUMBER;
 
-        int[] bonusArray = null;
+        int[] bonusArray = new int[5];
         SetName currentSet = SetName.NONE;
 
         firstRoll = true;
@@ -471,7 +471,12 @@ public class TheGameMaster : MonoBehaviour
         }
         else
         {
-            computerPlayer.DoNumberPhase(currentTurn == firstPlayer);
+            SideType[] opposingActions = null;
+            if (currentTurn != firstPlayer)
+            {
+                opposingActions = GetPlayerField((currentTurn == PlayerCode.P1 ? PlayerCode.P2 : PlayerCode.P1)).ActionOrderTypes;
+            }
+            computerPlayer.DoNumberPhase(opposingActions);
         }
 
         while (!changePhase)
@@ -508,7 +513,7 @@ public class TheGameMaster : MonoBehaviour
 
             nextPhaseButton.SetActive(!IsComputerPlayer(currentTurn) && (currentTurn == PlayerCode.P1 ? playerField1 : playerField2).IsNumberOrderFieldFull());
 
-            if (nextPhaseButton.activeSelf)
+            if (nextPhaseButton.activeSelf || (IsComputerPlayer(currentTurn) && GetPlayerField(currentTurn).IsNumberOrderFieldFull()))
             {
                 if (bonusArray == null)
                 {

@@ -403,54 +403,237 @@ public class ComputerPlayer : MonoBehaviour
         return new int[] { strikePriorityLevel, guardPriorityLevel, supportPriorityLevel };
     }
 
-    public void DoNumberPhase(bool isFirst)
+    public void DoNumberPhase(SideType[] opposingActions)
     {
-        StartCoroutine(SelectNumbers(isFirst));
+        StartCoroutine(SelectNumbers(opposingActions));
     }
 
-    private IEnumerator SelectNumbers(bool isFirst)
+    private IEnumerator SelectNumbers(SideType[] opposingActions)
     {
         yield return new WaitForSeconds(0.5f);
         gameMaster.RollButtonClick();
         yield return new WaitForSeconds(1.25f);
 
-        yield return StartCoroutine(GetNumberOrder(isFirst));
+        yield return StartCoroutine(GetNumberOrder(opposingActions));
 
         //gameMaster.PhaseChangeButtonClick();
     }
 
-    private IEnumerator GetNumberOrder(bool isFirst)
+    private IEnumerator GetNumberOrder(SideType[] opposingActions)
     {
         PlayerField myField = gameMaster.GetPlayerField(playerCode);
         DieObj[] diceRolls = myField.DiceRolls;
 
-        int[] dieValues = new int[5];
-        int currentValue = 0;
-        for (int i = 0; i < 5; ++i)
+        while (gameMaster.GetRollsLeft() >= 0)
         {
-            DieObj d = diceRolls[i];
-            if (d != null)
+            for (int i = 0; i < 5; ++i)
             {
-                dieValues[i] = d.GetCurrentSideNumber();
-                currentValue += d.GetCurrentSideNumber();
+                DieObj d = diceRolls[i];
+                if (d == null)
+                {
+                    myField.TakeDieFromNumberOrderField(i);
+                    yield return new WaitForSeconds(0.15f);
+                }
+            }
+
+            int[] dieValues = new int[5];
+            int currentValue = 0;
+            for (int i = 0; i < 5; ++i)
+            {
+                DieObj d = diceRolls[i];
+                if (d != null)
+                {
+                    dieValues[i] = d.GetCurrentSideNumber();
+                    currentValue += d.GetCurrentSideNumber();
+                }
+            }
+
+            int[] bonusValues = new int[5];
+            bool isBonusSet = (SetChecker.CheckGivenSet(dieValues, ref bonusValues) != SetName.NONE);
+            for (int i = 0; i < 5; ++i)
+            {
+                currentValue += bonusValues[i];
+            }
+
+            Debug.Log($"{dieValues[0]} {dieValues[1]} {dieValues[2]} {dieValues[3]} {dieValues[4]}");
+
+            
+
+            bool[] rerollArray = SetChecker.GetBestReroll(dieValues);
+            bool rerollDecision = false;
+            foreach (bool b in rerollArray)
+            {
+                if (b)
+                {
+                    rerollDecision = (gameMaster.GetRollsLeft() > 0 && GetRerollDecision(dieValues, rerollArray, currentValue));
+                    break;
+                }
+            }
+
+            if (rerollDecision)
+            {
+                for (int i = 0; i < 5; ++i)
+                {
+                    if (!rerollArray[i])
+                    {
+                        yield return new WaitForSeconds(0.15f);
+                        myField.SendDieToNumberOrderField(diceRolls[i].DieID + 1);
+                    }
+                }
+                gameMaster.RollButtonClick();
+                yield return new WaitForSeconds(1.25f);
+            }
+            else
+            {
+                if (opposingActions == null)
+                {
+                    bool areBonusesMaximizedByPriority = false;
+                    bool reverseOrder = false;
+                    while (!areBonusesMaximizedByPriority)
+                    {
+                        areBonusesMaximizedByPriority = true;
+
+                        for (int i = 0; i < 5; ++i)
+                        {
+                            DieObj d = diceRolls[i];
+                            if (d == null)
+                            {
+                                myField.TakeDieFromNumberOrderField(i);
+                                yield return new WaitForSeconds(0.15f);
+                            }
+                        }
+
+                        for (int i = 0; i < 5; ++i)
+                        {
+                            DieObj selectedDie = null;
+                            foreach (DieObj d in diceRolls)
+                            {
+                                if (d != null)
+                                {
+                                    if (selectedDie == null || (!reverseOrder ? d.GetCurrentSideNumber() > selectedDie.GetCurrentSideNumber() : d.GetCurrentSideNumber() < selectedDie.GetCurrentSideNumber()))
+                                    {
+                                        selectedDie = d;
+                                    }
+                                }
+                            }
+
+                            if (selectedDie != null)
+                            {
+                                yield return new WaitForSeconds(0.15f);
+                                myField.SendDieToNumberOrderField(selectedDie.DieID + 1);
+                            }
+                        }
+
+                        int[] numberOrder = myField.GetNumberOrderArray();
+                        int[] bonusArray = new int[5];
+                        SetChecker.CheckGivenSet(numberOrder, ref bonusArray);
+                        for (int i = 1; i < 5; ++i)
+                        {
+                            int currentPair = (numberOrder[i] + bonusArray[i]);
+                            int previousPair = (numberOrder[i - 1] + bonusArray[i - 1]);
+                            if (currentPair > previousPair)
+                            {
+                                areBonusesMaximizedByPriority = false;
+                                break;
+                            }
+                        }
+
+                        reverseOrder = !reverseOrder;
+                    }
+                    
+                }
+                else
+                {
+
+                }
+                break;
+            }
+            yield return null;
+        }
+        yield return null;
+    }
+
+    private bool GetRerollDecision(int[] values, bool[] rerolls, int value)
+    {
+        int[] currentDiceValues = new int[] { (rerolls[0] ? 1 : values[0]), (rerolls[1] ? 1 : values[1]), (rerolls[2] ? 1 : values[2]), (rerolls[3] ? 1 : values[3]), (rerolls[4] ? 1 : values[4]) };
+        int numDiceToReroll = (rerolls[0] ? 1 : 0) + (rerolls[1] ? 1 : 0) + (rerolls[2] ? 1 : 0) + (rerolls[3] ? 1 : 0) + (rerolls[4] ? 1 : 0);
+        int totalPossibleRolls = (int)Mathf.Pow(6f, (float)numDiceToReroll);
+
+        int resultSum = 0;
+        for (int x = 0; x < totalPossibleRolls; ++x)
+        {
+            resultSum += SetChecker.GetBestExpectedValue(currentDiceValues);
+
+            Debug.Log($"BEFORE {currentDiceValues[0]} {currentDiceValues[1]} {currentDiceValues[2]} {currentDiceValues[3]} {currentDiceValues[4]}");
+            currentDiceValues = GetNextDiceValues(currentDiceValues, rerolls, 0);
+            Debug.Log($"AFTER {currentDiceValues[0]} {currentDiceValues[1]} {currentDiceValues[2]} {currentDiceValues[3]} {currentDiceValues[4]}");
+        }
+        float expectedValue = ((float)resultSum / (float)totalPossibleRolls);
+
+        Debug.Log($"EXPECTED: {expectedValue} | CURRENT: {value}");
+
+        return (expectedValue > ((float) value));
+    }
+
+    private int[] GetNextDiceValues(int[] currentDiceValues, bool[] rerolls, int positionToIncrement = 0)
+    {
+        if (positionToIncrement >= 0 && positionToIncrement <= 4)
+        {
+            if (rerolls[positionToIncrement])
+            {
+                if (currentDiceValues[positionToIncrement] == 6)
+                {
+                    currentDiceValues[positionToIncrement] = 1;
+                    return GetNextDiceValues(currentDiceValues, rerolls, positionToIncrement + 1);
+                }
+                else
+                {
+                    currentDiceValues[positionToIncrement]++;
+                    return currentDiceValues;
+                }
+            }
+            else
+            {
+                return GetNextDiceValues(currentDiceValues, rerolls, positionToIncrement + 1);
             }
         }
-
-        int[] bonusValues = new int[5];
-        bool isASet = (SetChecker.CheckGivenSet(dieValues, ref bonusValues) != SetName.NONE);
-        for (int i = 0; i < 5; ++i)
+        else
         {
-            currentValue += bonusValues[i];
+            return currentDiceValues;
+        }
+    }
+
+    private List<KeyValuePair<int, int>> GetNumberPriority(int[] set)
+    {
+        List<KeyValuePair<int, int>> numPriorityList = new List<KeyValuePair<int, int>>(); // Key: Die Number, Value: Frequency
+        int[] valueCounts = new int[6];
+
+        foreach (int i in set)
+        {
+            valueCounts[i - 1]++;
         }
 
-        bool[] rerollArray = SetChecker.GetBestReroll(dieValues);
-        Debug.Log($"{rerollArray[0]} {rerollArray[1]} {rerollArray[2]} {rerollArray[3]} {rerollArray[4]}");
-
-        foreach (bool b in rerollArray)
+        for (int i = 0; i < 6; ++i)
         {
-
+            numPriorityList.Add(new KeyValuePair<int, int>(i + 1, valueCounts[0]));
         }
 
-        yield return null;
+        for (int i = 0; i < 6; ++i)
+        {
+            int biggestIndex = -1;
+            for (int j = 0; j < (6 - i); ++j)
+            {
+                KeyValuePair<int, int> currentPair = numPriorityList[i];
+                if (biggestIndex == -1 || (currentPair.Value >= numPriorityList[biggestIndex].Value))
+                {
+                    biggestIndex = j;
+                }
+            }
+            KeyValuePair<int, int> biggestValuedPair = numPriorityList[biggestIndex];
+            numPriorityList.RemoveAt(biggestIndex);
+            numPriorityList.Add(biggestValuedPair);
+        }
+
+        return numPriorityList;
     }
 }

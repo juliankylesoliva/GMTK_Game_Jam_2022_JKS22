@@ -41,29 +41,6 @@ public class SetChecker : MonoBehaviour
     {
         bool[] result = new bool[5];
 
-        // Key: index, Value: Die Number
-        List<KeyValuePair<int, int>> indexToNumberList = new List<KeyValuePair<int, int>>();
-        for (int i = 0; i < 5; ++i)
-        {
-            indexToNumberList.Add(new KeyValuePair<int, int>(i, set[i]));
-        }
-
-        for (int i = 0; i < 5; ++i)
-        {
-            int biggestIndex = -1;
-            for (int j = 0; j < (5 - i); ++j)
-            {
-                KeyValuePair<int, int> currentPair = indexToNumberList[i];
-                if (biggestIndex == -1 || (currentPair.Value > indexToNumberList[biggestIndex].Value))
-                {
-                    biggestIndex = j;
-                }
-            }
-            KeyValuePair<int, int> biggestValuedPair = indexToNumberList[biggestIndex];
-            indexToNumberList.RemoveAt(biggestIndex);
-            indexToNumberList.Add(biggestValuedPair);
-        }
-
         SetName[] setNames = new SetName[] { SetName.YACHT, SetName.BIG_STRAIGHT, SetName.LITTLE_STRAIGHT, SetName.FOUR_OF_A_KIND, SetName.FULL_HOUSE };
 
         float bestExpectedValue = -1f;
@@ -71,16 +48,52 @@ public class SetChecker : MonoBehaviour
         foreach (SetName n in setNames)
         {
             bool[] tempReroll = new bool[5];
-            float currentExpectation = GetExpectedValueOfGivenSet(n, indexToNumberList, ref tempReroll);
-            Debug.Log(currentExpectation);
+            float currentExpectation = GetExpectedValueOfGivenSet(n, set, ref tempReroll);
             if (currentExpectation > bestExpectedValue)
             {
-                result = new bool[5];
                 result = tempReroll;
+                bestExpectedValue = currentExpectation;
             }
         }
 
+        Debug.Log($"{result[0]} {result[1]} {result[2]} {result[3]} {result[4]}");
+
         return result;
+    }
+
+    public static int GetBestExpectedValue(int[] set)
+    {
+        int[] sorted = set;
+        for (int i = 0; i < 5; ++i)
+        {
+            int highestIndex = -1;
+            int highestValue = -1;
+            for (int j = i; j < 5; ++j)
+            {
+                int currentValue = sorted[j];
+                if (currentValue > highestValue)
+                {
+                    highestIndex = j;
+                    highestValue = currentValue;
+                }
+            }
+            int tempValue = sorted[i];
+            sorted[i] = highestValue;
+            sorted[highestIndex] = tempValue;
+        }
+
+        int[] bonusArray = new int[5];
+        CheckGivenSet(sorted, ref bonusArray);
+
+        int totalValue = 0;
+        for (int i = 0; i < 5; ++i)
+        {
+            totalValue += (sorted[i] + bonusArray[i]);
+        }
+
+        //Debug.Log($"{set[0]} {set[1]} {set[2]} {set[3]} {set[4]} = {totalValue}");
+
+        return totalValue;
     }
 
     public static string GetSetNameString(SetName set)
@@ -187,32 +200,33 @@ public class SetChecker : MonoBehaviour
         return false;
     }
 
-    private static float GetExpectedValueOfGivenSet(SetName setName, List<KeyValuePair<int, int>> indexToNumberList, ref bool[] tempReroll)
+    private static float GetExpectedValueOfGivenSet(SetName setName, int[] set, ref bool[] tempReroll)
     {
         switch (setName)
         {
             case SetName.YACHT:
-                return GetExpectedValueOfBestYacht(indexToNumberList, ref tempReroll);
+                return GetExpectedValueOfBestYacht(set, ref tempReroll);
             case SetName.BIG_STRAIGHT:
-                return GetExpectedValueOfStraight(indexToNumberList, ref tempReroll, true);
+                return GetExpectedValueOfStraight(set, ref tempReroll, true);
             case SetName.LITTLE_STRAIGHT:
-                return GetExpectedValueOfStraight(indexToNumberList, ref tempReroll, false);
+                return GetExpectedValueOfStraight(set, ref tempReroll, false);
             case SetName.FOUR_OF_A_KIND:
-                return GetExpectedValueOfFourOfAKind(indexToNumberList, ref tempReroll);
+                return GetExpectedValueOfFourOfAKind(set, ref tempReroll);
             case SetName.FULL_HOUSE:
-                return GetExpectedValueOfFullHouse(indexToNumberList, ref tempReroll);
+                return GetExpectedValueOfFullHouse(set, ref tempReroll);
             default:
                 return -1f;
         }
     }
 
-    private static float GetExpectedValueOfBestYacht(List<KeyValuePair<int, int>> indexToNumberList, ref bool[] tempReroll)
+    private static float GetExpectedValueOfBestYacht(int[] set, ref bool[] tempReroll)
     {
         int[] valueCounts = new int[6];
 
-        foreach (KeyValuePair<int, int> kvp in indexToNumberList)
+        for (int i = 0; i < 5; ++i)
         {
-            valueCounts[kvp.Value - 1]++;
+            int currentValue = set[i];
+            valueCounts[currentValue - 1]++;
         }
 
         int mode = -1;
@@ -229,10 +243,10 @@ public class SetChecker : MonoBehaviour
 
         for (int i = 0; i < 5; ++i)
         {
-            KeyValuePair<int, int> indexValueEntry = indexToNumberList[i];
-            if (indexValueEntry.Value != mode)
+            int currentValue = set[i];
+            if (currentValue != mode)
             {
-                tempReroll[indexValueEntry.Key] = true;
+                tempReroll[i] = true;
             }
         }
 
@@ -242,14 +256,14 @@ public class SetChecker : MonoBehaviour
         return (value * probability);
     }
 
-    private static float GetExpectedValueOfStraight(List<KeyValuePair<int, int>> indexToNumberList, ref bool[] tempReroll, bool isBigStraight = false)
+    private static float GetExpectedValueOfStraight(int[] set, ref bool[] tempReroll, bool isBigStraight = false)
     {
         for (int i = (isBigStraight ? 2 : 1); i <= (isBigStraight ? 6 : 5); ++i)
         {
             for (int j = 0; j < 5; ++j)
             {
-                KeyValuePair<int, int> currentIndexNumPair = indexToNumberList[j];
-                if (currentIndexNumPair.Value == i)
+                int currentValue = set[j];
+                if (currentValue == i)
                 {
                     tempReroll[j] = true; // Mark the numbers that are part of the big straight as true
                     break;
@@ -275,13 +289,14 @@ public class SetChecker : MonoBehaviour
         return (value * probability);
     }
 
-    private static float GetExpectedValueOfFourOfAKind(List<KeyValuePair<int, int>> indexToNumberList, ref bool[] tempReroll)
+    private static float GetExpectedValueOfFourOfAKind(int[] set, ref bool[] tempReroll)
     {
         int[] valueCounts = new int[6];
 
-        foreach (KeyValuePair<int, int> kvp in indexToNumberList)
+        for (int i = 0; i < 5; ++i)
         {
-            valueCounts[kvp.Value - 1]++;
+            int currentValue = set[i];
+            valueCounts[currentValue - 1]++;
         }
 
         int mode = -1;
@@ -300,7 +315,7 @@ public class SetChecker : MonoBehaviour
         for (int i = 0; i < 6; ++i)
         {
             int currentCount = valueCounts[i];
-            if (currentCount >= 0 && ((i + 1) != mode))
+            if (currentCount >= 0 && ((i + 1) != mode) && (i + 1) > highest)
             {
                 highest = (i + 1);
             }
@@ -308,10 +323,10 @@ public class SetChecker : MonoBehaviour
 
         for (int i = 0; i < 5; ++i)
         {
-            KeyValuePair<int, int> indexValueEntry = indexToNumberList[i];
-            if (indexValueEntry.Value != mode && indexValueEntry.Value != highest)
+            int currentValue = set[i];
+            if (currentValue != mode && currentValue != highest)
             {
-                tempReroll[indexValueEntry.Key] = true;
+                tempReroll[i] = true;
             }
         }
 
@@ -321,13 +336,14 @@ public class SetChecker : MonoBehaviour
         return (value * probability);
     }
 
-    private static float GetExpectedValueOfFullHouse(List<KeyValuePair<int, int>> indexToNumberList, ref bool[] tempReroll)
+    private static float GetExpectedValueOfFullHouse(int[] set, ref bool[] tempReroll)
     {
         int[] valueCounts = new int[6];
 
-        foreach (KeyValuePair<int, int> kvp in indexToNumberList)
+        for (int i = 0; i < 5; ++i)
         {
-            valueCounts[kvp.Value - 1]++;
+            int currentValue = set[i];
+            valueCounts[currentValue - 1]++;
         }
 
         int mode = -1;
@@ -356,10 +372,10 @@ public class SetChecker : MonoBehaviour
 
         for (int i = 0; i < 5; ++i)
         {
-            KeyValuePair<int, int> indexValueEntry = indexToNumberList[i];
-            if (indexValueEntry.Value != mode && indexValueEntry.Value != mode2)
+            int currentValue = set[i];
+            if (currentValue != mode && currentValue != mode2)
             {
-                tempReroll[indexValueEntry.Key] = true;
+                tempReroll[i] = true;
             }
         }
 

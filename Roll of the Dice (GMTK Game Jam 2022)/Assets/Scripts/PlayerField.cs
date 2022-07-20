@@ -212,7 +212,7 @@ public class PlayerField : MonoBehaviour
         return actionOrderField.IsFull();
     }
 
-    private void SendDieToNumberOrderField(int posNum)
+    public void SendDieToNumberOrderField(int posNum)
     {
         if (posNum < 1 || posNum > 5) { return; }
         PlaySound("diceKeep", 0.85f);
@@ -220,7 +220,7 @@ public class PlayerField : MonoBehaviour
         numberOrderField.PlaceDieInOrderField(tempDie);
     }
 
-    private void TakeDieFromNumberOrderField(int id)
+    public void TakeDieFromNumberOrderField(int id)
     {
         if (id < 0 || id > 4 || !currentRollsField.IsPositionEmpty(id + 1)) { return; }
         if (!currentRollsField.IsPositionEmpty(id + 1)) { return; }
