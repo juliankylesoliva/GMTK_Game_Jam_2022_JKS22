@@ -437,13 +437,19 @@ public class ComputerPlayer : MonoBehaviour
         }
 
         int[] bonusValues = new int[5];
-        SetChecker.CheckGivenSet(dieValues, ref bonusValues);
+        bool isASet = (SetChecker.CheckGivenSet(dieValues, ref bonusValues) != SetName.NONE);
         for (int i = 0; i < 5; ++i)
         {
             currentValue += bonusValues[i];
         }
 
         bool[] rerollArray = SetChecker.GetBestReroll(dieValues);
+        Debug.Log($"{rerollArray[0]} {rerollArray[1]} {rerollArray[2]} {rerollArray[3]} {rerollArray[4]}");
+
+        foreach (bool b in rerollArray)
+        {
+
+        }
 
         yield return null;
     }

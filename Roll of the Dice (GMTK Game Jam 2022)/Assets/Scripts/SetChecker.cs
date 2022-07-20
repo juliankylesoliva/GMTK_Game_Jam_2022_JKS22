@@ -75,6 +75,7 @@ public class SetChecker : MonoBehaviour
             Debug.Log(currentExpectation);
             if (currentExpectation > bestExpectedValue)
             {
+                result = new bool[5];
                 result = tempReroll;
             }
         }
@@ -192,6 +193,14 @@ public class SetChecker : MonoBehaviour
         {
             case SetName.YACHT:
                 return GetExpectedValueOfBestYacht(indexToNumberList, ref tempReroll);
+            case SetName.BIG_STRAIGHT:
+                return GetExpectedValueOfStraight(indexToNumberList, ref tempReroll, true);
+            case SetName.LITTLE_STRAIGHT:
+                return GetExpectedValueOfStraight(indexToNumberList, ref tempReroll, false);
+            case SetName.FOUR_OF_A_KIND:
+                return GetExpectedValueOfFourOfAKind(indexToNumberList, ref tempReroll);
+            case SetName.FULL_HOUSE:
+                return GetExpectedValueOfFullHouse(indexToNumberList, ref tempReroll);
             default:
                 return -1f;
         }
@@ -211,7 +220,7 @@ public class SetChecker : MonoBehaviour
         for (int i = 0; i < 6; ++i)
         {
             int currentCount = valueCounts[i];
-            if (currentCount > count)
+            if (currentCount >= count)
             {
                 count = currentCount;
                 mode = (i + 1);
@@ -221,7 +230,7 @@ public class SetChecker : MonoBehaviour
         for (int i = 0; i < 5; ++i)
         {
             KeyValuePair<int, int> indexValueEntry = indexToNumberList[i];
-            if (indexValueEntry.Value == mode)
+            if (indexValueEntry.Value != mode)
             {
                 tempReroll[indexValueEntry.Key] = true;
             }
@@ -232,4 +241,130 @@ public class SetChecker : MonoBehaviour
 
         return (value * probability);
     }
+
+    private static float GetExpectedValueOfStraight(List<KeyValuePair<int, int>> indexToNumberList, ref bool[] tempReroll, bool isBigStraight = false)
+    {
+        for (int i = (isBigStraight ? 2 : 1); i <= (isBigStraight ? 6 : 5); ++i)
+        {
+            for (int j = 0; j < 5; ++j)
+            {
+                KeyValuePair<int, int> currentIndexNumPair = indexToNumberList[j];
+                if (currentIndexNumPair.Value == i)
+                {
+                    tempReroll[j] = true; // Mark the numbers that are part of the big straight as true
+                    break;
+                }
+            }
+        }
+
+        int numDiceToReroll = 0;
+
+        // Flip all of the booleans
+        for (int i = 0; i < 5; ++i)
+        {
+            tempReroll[i] = !tempReroll[i];
+            if (tempReroll[i])
+            {
+                numDiceToReroll++;
+            }
+        }
+
+        float value = (isBigStraight ? 45f : 35f);
+        float probability = Mathf.Pow((1f / 6f), numDiceToReroll);
+
+        return (value * probability);
+    }
+
+    private static float GetExpectedValueOfFourOfAKind(List<KeyValuePair<int, int>> indexToNumberList, ref bool[] tempReroll)
+    {
+        int[] valueCounts = new int[6];
+
+        foreach (KeyValuePair<int, int> kvp in indexToNumberList)
+        {
+            valueCounts[kvp.Value - 1]++;
+        }
+
+        int mode = -1;
+        int count = 0;
+        for (int i = 0; i < 6; ++i)
+        {
+            int currentCount = valueCounts[i];
+            if (currentCount >= count)
+            {
+                count = currentCount;
+                mode = (i + 1);
+            }
+        }
+
+        int highest = -1;
+        for (int i = 0; i < 6; ++i)
+        {
+            int currentCount = valueCounts[i];
+            if (currentCount >= 0 && ((i + 1) != mode))
+            {
+                highest = (i + 1);
+            }
+        }
+
+        for (int i = 0; i < 5; ++i)
+        {
+            KeyValuePair<int, int> indexValueEntry = indexToNumberList[i];
+            if (indexValueEntry.Value != mode && indexValueEntry.Value != highest)
+            {
+                tempReroll[indexValueEntry.Key] = true;
+            }
+        }
+
+        float value = (float)(16 + highest + (4 * mode));
+        float probability = Mathf.Pow((1f / 6f), (5 - (count + 1)));
+
+        return (value * probability);
+    }
+
+    private static float GetExpectedValueOfFullHouse(List<KeyValuePair<int, int>> indexToNumberList, ref bool[] tempReroll)
+    {
+        int[] valueCounts = new int[6];
+
+        foreach (KeyValuePair<int, int> kvp in indexToNumberList)
+        {
+            valueCounts[kvp.Value - 1]++;
+        }
+
+        int mode = -1;
+        int count = 0;
+        for (int i = 0; i < 6; ++i)
+        {
+            int currentCount = valueCounts[i];
+            if (currentCount >= count)
+            {
+                count = currentCount;
+                mode = (i + 1);
+            }
+        }
+
+        int mode2 = -1;
+        int count2 = 0;
+        for (int i = 0; i < 6; ++i)
+        {
+            int currentCount = valueCounts[i];
+            if (currentCount >= count && ((i + 1) != mode))
+            {
+                count2 = currentCount;
+                mode2 = (i + 1);
+            }
+        }
+
+        for (int i = 0; i < 5; ++i)
+        {
+            KeyValuePair<int, int> indexValueEntry = indexToNumberList[i];
+            if (indexValueEntry.Value != mode && indexValueEntry.Value != mode2)
+            {
+                tempReroll[indexValueEntry.Key] = true;
+            }
+        }
+
+        float value = (float)(13 + (3 * mode) + (2 * mode2));
+        float probability = Mathf.Pow((1f / 6f), (5 - (count + count2)));
+        return (value * probability);
+    } 
 }
