@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public enum SetName { NONE, THREE_OF_A_KIND, FOUR_OF_A_KIND, FULL_HOUSE, LITTLE_STRAIGHT, BIG_STRAIGHT, YACHT }
+public enum SetName { NONE, FOUR_OF_A_KIND, FULL_HOUSE, LITTLE_STRAIGHT, BIG_STRAIGHT, YACHT }
 
 public class SetChecker : MonoBehaviour
 {
@@ -35,6 +35,51 @@ public class SetChecker : MonoBehaviour
             bonusArray = new int[] { 0, 0, 0, 0, 0 };
             return SetName.NONE;
         }
+    }
+
+    public static bool[] GetBestReroll(int[] set)
+    {
+        bool[] result = new bool[5];
+
+        // Key: index, Value: Die Number
+        List<KeyValuePair<int, int>> indexToNumberList = new List<KeyValuePair<int, int>>();
+        for (int i = 0; i < 5; ++i)
+        {
+            indexToNumberList.Add(new KeyValuePair<int, int>(i, set[i]));
+        }
+
+        for (int i = 0; i < 5; ++i)
+        {
+            int biggestIndex = -1;
+            for (int j = 0; j < (5 - i); ++j)
+            {
+                KeyValuePair<int, int> currentPair = indexToNumberList[i];
+                if (biggestIndex == -1 || (currentPair.Value > indexToNumberList[biggestIndex].Value))
+                {
+                    biggestIndex = j;
+                }
+            }
+            KeyValuePair<int, int> biggestValuedPair = indexToNumberList[biggestIndex];
+            indexToNumberList.RemoveAt(biggestIndex);
+            indexToNumberList.Add(biggestValuedPair);
+        }
+
+        SetName[] setNames = new SetName[] { SetName.YACHT, SetName.BIG_STRAIGHT, SetName.LITTLE_STRAIGHT, SetName.FOUR_OF_A_KIND, SetName.FULL_HOUSE };
+
+        float bestExpectedValue = -1f;
+
+        foreach (SetName n in setNames)
+        {
+            bool[] tempReroll = new bool[5];
+            float currentExpectation = GetExpectedValueOfGivenSet(n, indexToNumberList, ref tempReroll);
+            Debug.Log(currentExpectation);
+            if (currentExpectation > bestExpectedValue)
+            {
+                result = tempReroll;
+            }
+        }
+
+        return result;
     }
 
     public static string GetSetNameString(SetName set)
@@ -139,5 +184,52 @@ public class SetChecker : MonoBehaviour
             }
         }
         return false;
+    }
+
+    private static float GetExpectedValueOfGivenSet(SetName setName, List<KeyValuePair<int, int>> indexToNumberList, ref bool[] tempReroll)
+    {
+        switch (setName)
+        {
+            case SetName.YACHT:
+                return GetExpectedValueOfBestYacht(indexToNumberList, ref tempReroll);
+            default:
+                return -1f;
+        }
+    }
+
+    private static float GetExpectedValueOfBestYacht(List<KeyValuePair<int, int>> indexToNumberList, ref bool[] tempReroll)
+    {
+        int[] valueCounts = new int[6];
+
+        foreach (KeyValuePair<int, int> kvp in indexToNumberList)
+        {
+            valueCounts[kvp.Value - 1]++;
+        }
+
+        int mode = -1;
+        int count = 0;
+        for (int i = 0; i < 6; ++i)
+        {
+            int currentCount = valueCounts[i];
+            if (currentCount > count)
+            {
+                count = currentCount;
+                mode = (i + 1);
+            }
+        }
+
+        for (int i = 0; i < 5; ++i)
+        {
+            KeyValuePair<int, int> indexValueEntry = indexToNumberList[i];
+            if (indexValueEntry.Value == mode)
+            {
+                tempReroll[indexValueEntry.Key] = true;
+            }
+        }
+
+        float value = (float)(30 + (mode * 5));
+        float probability = Mathf.Pow((1f / 6f), (5 - count));
+
+        return (value * probability);
     }
 }

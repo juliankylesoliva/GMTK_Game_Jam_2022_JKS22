@@ -113,30 +113,34 @@ public class ComputerPlayer : MonoBehaviour
         else {/* Nothing */}
     }
 
-    public void DoActionPhase(bool isFirst, SideType[] opposingActions = null)
+    public void DoActionPhase(SideType[] opposingActions = null)
     {
-        StartCoroutine(SelectActions(isFirst, opposingActions));
+        StartCoroutine(SelectActions(opposingActions));
     }
 
-    private IEnumerator SelectActions(bool isFirst, SideType[] opposingActions = null)
+    private IEnumerator SelectActions(SideType[] opposingActions)
     {
+        yield return new WaitForSeconds(0.5f);
         gameMaster.RollButtonClick();
         yield return new WaitForSeconds(1.25f);
 
-        if (isFirst)
+        if (opposingActions != null)
         {
-            yield return StartCoroutine(GetActionOrder(GetPriorityArray(), isFirst));
+            yield return StartCoroutine(GetCounterActionOrder(opposingActions));
         }
         else
         {
-            yield return StartCoroutine(GetActionOrder(GetCounterPriorityArray(opposingActions), !isFirst));
+            yield return StartCoroutine(GetActionOrder());
         }
+        
 
-        yield return null;
+        gameMaster.PhaseChangeButtonClick();
     }
 
-    private IEnumerator GetActionOrder(int[] priority, bool isFirst)
+    private IEnumerator GetActionOrder()
     {
+        int[] priority = GetPriorityArray();
+
         PlayerField myField = gameMaster.GetPlayerField(playerCode);
         DieObj[] diceRolls = myField.DiceRolls;
 
@@ -161,40 +165,36 @@ public class ComputerPlayer : MonoBehaviour
             priorityOrder.Add(biggestValuedPair);
         }
 
-        Debug.Log($"{priorityOrder[0].Key}: {priorityOrder[0].Value} | {priorityOrder[1].Key}: {priorityOrder[1].Value} | {priorityOrder[2].Key}: {priorityOrder[2].Value}");
-
-        for (int rolls = (isFirst ? 1 : 2); rolls > 0; --rolls)
+        while (gameMaster.GetRollsLeft() >= 0)
         {
-            List<DieObj> diceRollsList = new List<DieObj>();
-            foreach (DieObj d in diceRolls)
+            for (int i = 0; i < 5; ++i)
             {
-                if (d != null)
+                DieObj d = diceRolls[i];
+                if (d == null)
                 {
-                    myField.TakeDieFromActionOrderField(d.DieID);
-                    yield return new WaitForSeconds(0.1f);
+                    myField.TakeDieFromActionOrderField(i);
+                    yield return new WaitForSeconds(0.15f);
                 }
-                diceRollsList.Add(d);
             }
 
             foreach (KeyValuePair<SideType, int> kvp in priorityOrder)
             {
-                Debug.Log(kvp.Key);
                 bool isStillDiceLeft = true;
                 int numDiceToGet = kvp.Value;
-                while ((numDiceToGet > 0 || rolls == 0) && isStillDiceLeft)
+                while ((numDiceToGet > 0 || gameMaster.GetRollsLeft() == 0) && isStillDiceLeft)
                 {
                     isStillDiceLeft = false;
 
                     ActionDieObj selectedDie = null;
                     float highestProbability = -1f;
 
-                    foreach (DieObj d in diceRollsList)
+                    foreach (DieObj d in diceRolls)
                     {
                         if (d != null)
                         {
                             ActionDieObj currentActDie = (ActionDieObj)d;
                             float currentProbability = currentActDie.GetProbabiltyOfSide(kvp.Key);
-                            if (rolls == 0 || (currentActDie.GetCurrentSideType() == kvp.Key && currentProbability > highestProbability))
+                            if ((gameMaster.GetRollsLeft() == 0 && currentActDie.GetCurrentSideType() == kvp.Key) || (currentActDie.GetCurrentSideType() == kvp.Key && currentProbability > highestProbability))
                             {
                                 selectedDie = currentActDie;
                                 highestProbability = currentProbability;
@@ -205,18 +205,123 @@ public class ComputerPlayer : MonoBehaviour
 
                     if (selectedDie != null)
                     {
-                        yield return new WaitForSeconds(0.25f);
-                        diceRollsList.RemoveAt(selectedDie.DieID - 1);
+                        yield return new WaitForSeconds(0.15f);
                         numDiceToGet--;
-                        myField.SendDieToActionOrderField(selectedDie.DieID);
+                        myField.SendDieToActionOrderField(selectedDie.DieID + 1);
                     }
                 }
             }
 
-            if (rolls > 0)
+            if ((gameMaster.GetRollsLeft() > 0 && myField.DoesCurrentRollsFieldHaveDice()) || myField.DoesCurrentRollsFieldHaveDice())
             {
                 gameMaster.RollButtonClick();
                 yield return new WaitForSeconds(1.25f);
+            }
+            else
+            {
+                break;
+            }
+        }
+        yield return null;
+    }
+
+    private IEnumerator GetCounterActionOrder(SideType[] opposingActions)
+    {
+        PlayerField myField = gameMaster.GetPlayerField(playerCode);
+        DieObj[] diceRolls = myField.DiceRolls;
+
+        while (gameMaster.GetRollsLeft() >= 0)
+        {
+            for (int i = 0; i < 5; ++i)
+            {
+                DieObj d = diceRolls[i];
+                if (d == null)
+                {
+                    myField.TakeDieFromActionOrderField(i);
+                    yield return new WaitForSeconds(0.15f);
+                }
+            }
+
+            List<KeyValuePair<SideType, int>> priorityOrder = new List<KeyValuePair<SideType, int>>();
+            foreach (SideType s in opposingActions)
+            {
+                priorityOrder.Clear();
+                switch (s)
+                {
+                    case SideType.STRIKE:
+                        priorityOrder.Add(new KeyValuePair<SideType, int>(SideType.GUARD, 1));
+                        if (gameMaster.GetRollsLeft() == 0)
+                        {
+                            priorityOrder.Add(new KeyValuePair<SideType, int>(SideType.STRIKE, 1));
+                            priorityOrder.Add(new KeyValuePair<SideType, int>(SideType.SUPPORT, 1));
+                        }
+                        break;
+                    case SideType.GUARD:
+                        priorityOrder.Add(new KeyValuePair<SideType, int>(SideType.SUPPORT, 1));
+                        if (gameMaster.GetRollsLeft() == 0)
+                        {
+                            priorityOrder.Add(new KeyValuePair<SideType, int>(SideType.GUARD, 1));
+                            priorityOrder.Add(new KeyValuePair<SideType, int>(SideType.STRIKE, 1));
+                        }
+                        break;
+                    case SideType.SUPPORT:
+                        priorityOrder.Add(new KeyValuePair<SideType, int>(SideType.STRIKE, 1));
+                        if (gameMaster.GetRollsLeft() == 0)
+                        {
+                            priorityOrder.Add(new KeyValuePair<SideType, int>(SideType.SUPPORT, 1));
+                            priorityOrder.Add(new KeyValuePair<SideType, int>(SideType.GUARD, 1));
+                        }
+                        break;
+                }
+
+                foreach (KeyValuePair<SideType, int> kvp in priorityOrder)
+                {
+                    bool isMatchupFound = false;
+                    bool isStillDiceLeft = true;
+                    int numDiceToGet = kvp.Value;
+                    while ((numDiceToGet > 0 || gameMaster.GetRollsLeft() == 0) && isStillDiceLeft)
+                    {
+                        isStillDiceLeft = false;
+
+                        ActionDieObj selectedDie = null;
+                        float highestProbability = -1f;
+
+                        foreach (DieObj d in diceRolls)
+                        {
+                            if (d != null)
+                            {
+                                ActionDieObj currentActDie = (ActionDieObj)d;
+                                float currentProbability = currentActDie.GetProbabiltyOfSide(kvp.Key);
+                                if ((gameMaster.GetRollsLeft() == 0 && currentActDie.GetCurrentSideType() == kvp.Key) || (currentActDie.GetCurrentSideType() == kvp.Key && currentProbability > highestProbability))
+                                {
+                                    selectedDie = currentActDie;
+                                    highestProbability = currentProbability;
+                                    isStillDiceLeft = true;
+                                    isMatchupFound = true;
+                                }
+                            }
+                        }
+
+                        if (selectedDie != null)
+                        {
+                            yield return new WaitForSeconds(0.15f);
+                            numDiceToGet--;
+                            myField.SendDieToActionOrderField(selectedDie.DieID + 1);
+                            break;
+                        }
+                    }
+                    if (isMatchupFound) { break; }
+                }
+            }
+
+            if ((gameMaster.GetRollsLeft() > 0 && myField.DoesCurrentRollsFieldHaveDice()) || myField.DoesCurrentRollsFieldHaveDice())
+            {
+                gameMaster.RollButtonClick();
+                yield return new WaitForSeconds(1.25f);
+            }
+            else
+            {
+                break;
             }
         }
         yield return null;
@@ -298,28 +403,48 @@ public class ComputerPlayer : MonoBehaviour
         return new int[] { strikePriorityLevel, guardPriorityLevel, supportPriorityLevel };
     }
 
-    private int[] GetCounterPriorityArray(SideType[] opposingActions)
+    public void DoNumberPhase(bool isFirst)
     {
-        int numStrike = 0;
-        int numGuard = 0;
-        int numSupport = 0;
+        StartCoroutine(SelectNumbers(isFirst));
+    }
 
-        foreach (SideType s in opposingActions)
+    private IEnumerator SelectNumbers(bool isFirst)
+    {
+        yield return new WaitForSeconds(0.5f);
+        gameMaster.RollButtonClick();
+        yield return new WaitForSeconds(1.25f);
+
+        yield return StartCoroutine(GetNumberOrder(isFirst));
+
+        //gameMaster.PhaseChangeButtonClick();
+    }
+
+    private IEnumerator GetNumberOrder(bool isFirst)
+    {
+        PlayerField myField = gameMaster.GetPlayerField(playerCode);
+        DieObj[] diceRolls = myField.DiceRolls;
+
+        int[] dieValues = new int[5];
+        int currentValue = 0;
+        for (int i = 0; i < 5; ++i)
         {
-            switch (s)
+            DieObj d = diceRolls[i];
+            if (d != null)
             {
-                case SideType.STRIKE:
-                    numGuard++;
-                    break;
-                case SideType.GUARD:
-                    numSupport++;
-                    break;
-                case SideType.SUPPORT:
-                    numStrike++;
-                    break;
+                dieValues[i] = d.GetCurrentSideNumber();
+                currentValue += d.GetCurrentSideNumber();
             }
         }
 
-        return new int[] { numStrike, numGuard, numSupport };
+        int[] bonusValues = new int[5];
+        SetChecker.CheckGivenSet(dieValues, ref bonusValues);
+        for (int i = 0; i < 5; ++i)
+        {
+            currentValue += bonusValues[i];
+        }
+
+        bool[] rerollArray = SetChecker.GetBestReroll(dieValues);
+
+        yield return null;
     }
 }

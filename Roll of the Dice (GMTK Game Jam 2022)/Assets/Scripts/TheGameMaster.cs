@@ -147,6 +147,11 @@ public class TheGameMaster : MonoBehaviour
         return (player == PlayerCode.P1 ? playerField1 : playerField2);
     }
 
+    public int GetRollsLeft()
+    {
+        return rollsLeft;
+    }
+
     private void GameModePrompt()
     {
         announcerText.text = "Pick a game mode!";
@@ -394,13 +399,12 @@ public class TheGameMaster : MonoBehaviour
         }
         else
         {
-            bool isComputerFirst = (currentTurn == firstPlayer);
             SideType[] opposingActions = null;
-            if (!isComputerFirst)
+            if (currentTurn != firstPlayer)
             {
                 opposingActions = GetPlayerField((currentTurn == PlayerCode.P1 ? PlayerCode.P2 : PlayerCode.P1)).ActionOrderTypes;
             }
-            computerPlayer.DoActionPhase(isComputerFirst, opposingActions);
+            computerPlayer.DoActionPhase(opposingActions);
         }
         
 
@@ -434,7 +438,7 @@ public class TheGameMaster : MonoBehaviour
                 rollButton.SetActive(false);
             }
 
-            nextPhaseButton.SetActive((currentTurn == PlayerCode.P1 ? playerField1 : playerField2).IsActionOrderFieldFull());
+            nextPhaseButton.SetActive(!IsComputerPlayer(currentTurn) && (currentTurn == PlayerCode.P1 ? playerField1 : playerField2).IsActionOrderFieldFull());
 
             yield return null;
         }
@@ -461,25 +465,36 @@ public class TheGameMaster : MonoBehaviour
 
         announcerText.text = $"{(currentTurn == PlayerCode.P1 ? "Player 1" : "Player 2")}, roll and pair up your Numbered Dice!.";
 
-        rollButton.SetActive(true);
+        if (!IsComputerPlayer(currentTurn))
+        {
+            rollButton.SetActive(true);
+        }
+        else
+        {
+            computerPlayer.DoNumberPhase(currentTurn == firstPlayer);
+        }
 
         while (!changePhase)
         {
-            if (rollButtonCooldown)
+            if (!IsComputerPlayer(currentTurn))
             {
-                if (rollButton.activeSelf)
+                if (rollButtonCooldown)
                 {
-                    rollButton.SetActive(false);
+                    if (rollButton.activeSelf)
+                    {
+                        rollButton.SetActive(false);
+                    }
                 }
-            }
-            else
-            {
-                if (!rollButton.activeSelf)
+                else
                 {
-                    rollButton.SetActive(true);
-                }
+                    if (!rollButton.activeSelf)
+                    {
+                        rollButton.SetActive(true);
+                    }
 
+                }
             }
+            
 
             if (rollButtonText.gameObject.activeSelf)
             {
@@ -491,7 +506,7 @@ public class TheGameMaster : MonoBehaviour
                 rollButton.SetActive(false);
             }
 
-            nextPhaseButton.SetActive((currentTurn == PlayerCode.P1 ? playerField1 : playerField2).IsNumberOrderFieldFull());
+            nextPhaseButton.SetActive(!IsComputerPlayer(currentTurn) && (currentTurn == PlayerCode.P1 ? playerField1 : playerField2).IsNumberOrderFieldFull());
 
             if (nextPhaseButton.activeSelf)
             {
