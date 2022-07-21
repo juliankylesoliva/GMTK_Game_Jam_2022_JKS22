@@ -416,7 +416,7 @@ public class ComputerPlayer : MonoBehaviour
 
         yield return StartCoroutine(GetNumberOrder(opposingActions));
 
-        //gameMaster.PhaseChangeButtonClick();
+        gameMaster.PhaseChangeButtonClick();
     }
 
     private IEnumerator GetNumberOrder(SideType[] opposingActions)
@@ -449,24 +449,26 @@ public class ComputerPlayer : MonoBehaviour
             }
 
             int[] bonusValues = new int[5];
-            bool isBonusSet = (SetChecker.CheckGivenSet(dieValues, ref bonusValues) != SetName.NONE);
-            for (int i = 0; i < 5; ++i)
-            {
-                currentValue += bonusValues[i];
-            }
-
-            Debug.Log($"{dieValues[0]} {dieValues[1]} {dieValues[2]} {dieValues[3]} {dieValues[4]}");
-
-            
-
-            bool[] rerollArray = SetChecker.GetBestReroll(dieValues);
+            bool[] rerollArray = new bool[5];
             bool rerollDecision = false;
-            foreach (bool b in rerollArray)
+            bool isBonusSet = (SetChecker.CheckGivenSet(dieValues, ref bonusValues) != SetName.NONE);
+
+            if (gameMaster.GetRollsLeft() > 0)
             {
-                if (b)
+                for (int i = 0; i < 5; ++i)
                 {
-                    rerollDecision = (gameMaster.GetRollsLeft() > 0 && GetRerollDecision(dieValues, rerollArray, currentValue));
-                    break;
+                    currentValue += bonusValues[i];
+                }
+
+                rerollArray = SetChecker.GetBestReroll(dieValues);
+
+                foreach (bool b in rerollArray)
+                {
+                    if (b)
+                    {
+                        rerollDecision = (gameMaster.GetRollsLeft() > 0 && GetRerollDecision(dieValues, rerollArray, currentValue));
+                        break;
+                    }
                 }
             }
 
@@ -485,7 +487,7 @@ public class ComputerPlayer : MonoBehaviour
             }
             else
             {
-                if (opposingActions == null)
+                if (opposingActions == null || isBonusSet)
                 {
                     bool areBonusesMaximizedByPriority = false;
                     bool reverseOrder = false;
@@ -540,11 +542,37 @@ public class ComputerPlayer : MonoBehaviour
 
                         reverseOrder = !reverseOrder;
                     }
-                    
                 }
                 else
                 {
+                    SideType[] myActions = myField.GetActionOrderArray();
+                    for (int i = 0; i < 5; ++i)
+                    {
+                        SideType myAction = myActions[i];
+                        SideType theirAction = opposingActions[i];
+                        bool getHighestDie = ((myAction == SideType.STRIKE && theirAction == SideType.SUPPORT) || (myAction == SideType.GUARD && theirAction == SideType.STRIKE) || (myAction == SideType.SUPPORT && theirAction == SideType.GUARD));
 
+                        for (int j = 0; j < 5; ++j)
+                        {
+                            DieObj selectedDie = null;
+                            foreach (DieObj d in diceRolls)
+                            {
+                                if (d != null)
+                                {
+                                    if (selectedDie == null || (getHighestDie ? d.GetCurrentSideNumber() > selectedDie.GetCurrentSideNumber() : d.GetCurrentSideNumber() < selectedDie.GetCurrentSideNumber()))
+                                    {
+                                        selectedDie = d;
+                                    }
+                                }
+                            }
+
+                            if (selectedDie != null)
+                            {
+                                yield return new WaitForSeconds(0.15f);
+                                myField.SendDieToNumberOrderField(selectedDie.DieID + 1);
+                            }
+                        }
+                    }
                 }
                 break;
             }
@@ -555,27 +583,47 @@ public class ComputerPlayer : MonoBehaviour
 
     private bool GetRerollDecision(int[] values, bool[] rerolls, int value)
     {
-        int[] currentDiceValues = new int[] { (rerolls[0] ? 1 : values[0]), (rerolls[1] ? 1 : values[1]), (rerolls[2] ? 1 : values[2]), (rerolls[3] ? 1 : values[3]), (rerolls[4] ? 1 : values[4]) };
+        int[] currentDiceValues = new int[5];
+        List<int[]> listOfArrays = new List<int[]>();
+
         int numDiceToReroll = (rerolls[0] ? 1 : 0) + (rerolls[1] ? 1 : 0) + (rerolls[2] ? 1 : 0) + (rerolls[3] ? 1 : 0) + (rerolls[4] ? 1 : 0);
-        int totalPossibleRolls = (int)Mathf.Pow(6f, (float)numDiceToReroll);
+        int totalPossibleRolls = 7776;
+        int maxRollsNeeded = (int)Mathf.Pow(6f, numDiceToReroll);
 
+        int resultCount = 0;
         int resultSum = 0;
-        for (int x = 0; x < totalPossibleRolls; ++x)
+        for (int x = 0; x < totalPossibleRolls && resultCount < maxRollsNeeded; ++x)
         {
-            resultSum += SetChecker.GetBestExpectedValue(currentDiceValues);
+            int dieVal1 = (rerolls[0] ? ((x % 6) + 1) : values[0]);
+            int dieVal2 = (rerolls[1] ? (((x / 6) % 6) + 1) : values[1]);
+            int dieVal3 = (rerolls[2] ? (((x / 36) % 6) + 1) : values[2]);
+            int dieVal4 = (rerolls[3] ? (((x / 216) % 6) + 1) : values[3]);
+            int dieVal5 = (rerolls[4] ? (((x / 1296) % 6) + 1) : values[4]);
 
-            Debug.Log($"BEFORE {currentDiceValues[0]} {currentDiceValues[1]} {currentDiceValues[2]} {currentDiceValues[3]} {currentDiceValues[4]}");
-            currentDiceValues = GetNextDiceValues(currentDiceValues, rerolls, 0);
-            Debug.Log($"AFTER {currentDiceValues[0]} {currentDiceValues[1]} {currentDiceValues[2]} {currentDiceValues[3]} {currentDiceValues[4]}");
+            bool checkThisArray = true;
+            foreach (int[] array in listOfArrays)
+            {
+                if (array[0] == dieVal1 && array[1] == dieVal2 && array[2] == dieVal3 && array[3] == dieVal4 && array[4] == dieVal5)
+                {
+                    checkThisArray = false;
+                    break;
+                }
+            }
+
+            currentDiceValues = new int[] { dieVal1, dieVal2, dieVal3, dieVal4, dieVal5 };
+
+            if (checkThisArray)
+            {
+                resultSum += SetChecker.GetBestExpectedValue(currentDiceValues);
+                resultCount++;
+            }
         }
-        float expectedValue = ((float)resultSum / (float)totalPossibleRolls);
+        float expectedValue = ((float)resultSum / (float)maxRollsNeeded);
 
-        Debug.Log($"EXPECTED: {expectedValue} | CURRENT: {value}");
-
-        return (expectedValue > ((float) value));
+        return (expectedValue >= ((float) value));
     }
 
-    private int[] GetNextDiceValues(int[] currentDiceValues, bool[] rerolls, int positionToIncrement = 0)
+    private void GetNextDiceValues(int[] currentDiceValues, bool[] rerolls, int positionToIncrement = 0)
     {
         if (positionToIncrement >= 0 && positionToIncrement <= 4)
         {
@@ -584,22 +632,17 @@ public class ComputerPlayer : MonoBehaviour
                 if (currentDiceValues[positionToIncrement] == 6)
                 {
                     currentDiceValues[positionToIncrement] = 1;
-                    return GetNextDiceValues(currentDiceValues, rerolls, positionToIncrement + 1);
+                    GetNextDiceValues(currentDiceValues, rerolls, positionToIncrement + 1);
                 }
                 else
                 {
                     currentDiceValues[positionToIncrement]++;
-                    return currentDiceValues;
                 }
             }
             else
             {
-                return GetNextDiceValues(currentDiceValues, rerolls, positionToIncrement + 1);
+                GetNextDiceValues(currentDiceValues, rerolls, positionToIncrement + 1);
             }
-        }
-        else
-        {
-            return currentDiceValues;
         }
     }
 

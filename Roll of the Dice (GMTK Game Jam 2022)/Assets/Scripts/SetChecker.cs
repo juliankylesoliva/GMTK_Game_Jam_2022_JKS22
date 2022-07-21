@@ -56,8 +56,6 @@ public class SetChecker : MonoBehaviour
             }
         }
 
-        Debug.Log($"{result[0]} {result[1]} {result[2]} {result[3]} {result[4]}");
-
         return result;
     }
 
@@ -90,8 +88,6 @@ public class SetChecker : MonoBehaviour
         {
             totalValue += (sorted[i] + bonusArray[i]);
         }
-
-        //Debug.Log($"{set[0]} {set[1]} {set[2]} {set[3]} {set[4]} = {totalValue}");
 
         return totalValue;
     }

@@ -95,6 +95,11 @@ public class PlayerField : MonoBehaviour
         }
     }
 
+    public SideType[] GetActionOrderArray()
+    {
+        return actionOrderField.GetDiceActionArray();
+    }
+
     public int[] GetNumberOrderArray()
     {
         return numberOrderField.GetDiceValueArray();

@@ -513,7 +513,7 @@ public class TheGameMaster : MonoBehaviour
 
             nextPhaseButton.SetActive(!IsComputerPlayer(currentTurn) && (currentTurn == PlayerCode.P1 ? playerField1 : playerField2).IsNumberOrderFieldFull());
 
-            if (nextPhaseButton.activeSelf || (IsComputerPlayer(currentTurn) && GetPlayerField(currentTurn).IsNumberOrderFieldFull()))
+            if (GetPlayerField(currentTurn).IsNumberOrderFieldFull())
             {
                 if (bonusArray == null)
                 {
