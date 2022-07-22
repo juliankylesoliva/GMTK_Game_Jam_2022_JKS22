@@ -37,18 +37,42 @@ public class SetChecker : MonoBehaviour
         }
     }
 
-    public static List<bool[]> GetPossibleRerolls(int[] set)
+    public static List<KeyValuePair<float, bool[]>> GetPossibleRerolls(int[] set)
     {
-        List<bool[]> result = new List<bool[]>();
+        List<KeyValuePair<float, bool[]>> result = new List<KeyValuePair<float, bool[]>>();
 
-        SetName[] setNames = new SetName[] { SetName.YACHT, SetName.BIG_STRAIGHT, SetName.LITTLE_STRAIGHT, SetName.FOUR_OF_A_KIND, SetName.FULL_HOUSE, SetName.NONE };
+        SetName[] setNames = new SetName[] { SetName.YACHT, SetName.BIG_STRAIGHT, SetName.LITTLE_STRAIGHT, SetName.FOUR_OF_A_KIND, SetName.FULL_HOUSE};
 
         foreach (SetName n in setNames)
         {
             bool[] tempReroll = new bool[5];
-            Debug.Log($"{GetSetNameString(n)}: {GetExpectedValueOfGivenSet(n, set, ref tempReroll)}");
-            result.Add(tempReroll);
+            float expected = GetExpectedValueOfGivenSet(n, set, ref tempReroll);
+            Debug.Log($"{GetSetNameString(n)}: {expected}");
+            
+            result.Add(new KeyValuePair<float, bool[]>(expected, tempReroll));
         }
+
+        for (int j = 0; j < result.Count; ++j)
+        {
+            int highestIndex = -1;
+            float highestExpectation = -1f;
+            for (int i = 0; i < (result.Count - j); ++i)
+            {
+                KeyValuePair<float, bool[]> currentKvp = result[i];
+                if (currentKvp.Key > highestExpectation)
+                {
+                    highestExpectation = currentKvp.Key;
+                    highestIndex = i;
+                }
+            }
+            KeyValuePair<float, bool[]> selectedKvp = result[highestIndex];
+            result.RemoveAt(highestIndex);
+            result.Add(selectedKvp);
+        }
+
+        bool[] chanceRerollArray = new bool[5];
+        float chanceExpectation = GetExpectedValueOfGivenSet(SetName.NONE, set, ref chanceRerollArray);
+        result.Add(new KeyValuePair<float, bool[]>(chanceExpectation, chanceRerollArray));
 
         return result;
     }
@@ -242,6 +266,15 @@ public class SetChecker : MonoBehaviour
             }
         }
 
+        if (count == 5)
+        {
+            for (int i = 0; i < 5; ++i)
+            {
+                tempReroll[i] = false;
+            }
+            return 0f;
+        }
+
         float value = (float)(30 + (mode * 5));
         float probability = Mathf.Pow((1f / 6f), (5 - count));
 
@@ -273,6 +306,15 @@ public class SetChecker : MonoBehaviour
             {
                 numDiceToReroll++;
             }
+        }
+
+        if (numDiceToReroll == 5)
+        {
+            for (int i = 0; i < 5; ++i)
+            {
+                tempReroll[i] = false;
+            }
+            return 0f;
         }
 
         float value = (isBigStraight ? 45f : 35f);
@@ -307,10 +349,19 @@ public class SetChecker : MonoBehaviour
         for (int i = 0; i < 6; ++i)
         {
             int currentCount = valueCounts[i];
-            if (currentCount >= 0 && ((i + 1) != mode) && (i + 1) > highest)
+            if (currentCount > 0 && ((i + 1) != mode) && (i + 1) >= highest)
             {
                 highest = (i + 1);
             }
+        }
+
+        if (count == 5 || count == 4)
+        {
+            for (int i = 0; i < 5; ++i)
+            {
+                tempReroll[i] = false;
+            }
+            return 0f;
         }
 
         for (int i = 0; i < 5; ++i)
@@ -323,7 +374,7 @@ public class SetChecker : MonoBehaviour
         }
 
         float value = (float)(16 + highest + (4 * mode));
-        float probability = Mathf.Pow((1f / 6f), (5 - (count + 1)));
+        float probability = Mathf.Pow((1f / 6f), (5 - (count + (highest != -1 ? 1 : 0))));
 
         return (value * probability);
     }
@@ -355,7 +406,7 @@ public class SetChecker : MonoBehaviour
         for (int i = 0; i < 6; ++i)
         {
             int currentCount = valueCounts[i];
-            if (currentCount >= count && ((i + 1) != mode))
+            if (currentCount >= count2 && ((i + 1) != mode))
             {
                 count2 = currentCount;
                 mode2 = (i + 1);
@@ -369,6 +420,15 @@ public class SetChecker : MonoBehaviour
             {
                 tempReroll[i] = true;
             }
+        }
+
+        if ((count + count2) == 5)
+        {
+            for (int i = 0; i < 5; ++i)
+            {
+                tempReroll[i] = false;
+            }
+            return 0f;
         }
 
         float value = (float)(13 + (3 * mode) + (2 * mode2));
@@ -402,7 +462,7 @@ public class SetChecker : MonoBehaviour
         for (int i = 0; i < 6; ++i)
         {
             int currentCount = valueCounts[i];
-            if (currentCount > 0 && ((i + 1) != mode) && (i + 1) > highest)
+            if (currentCount > 0 && ((i + 1) != mode) && (i + 1) >= highest)
             {
                 highest = (i + 1);
             }
@@ -412,23 +472,37 @@ public class SetChecker : MonoBehaviour
         for (int i = 0; i < 6; ++i)
         {
             int currentCount = valueCounts[i];
-            if (currentCount >= 0 && ((i + 1) != mode) && (i + 1) > highest2)
+            if (currentCount >= 0 && ((i + 1) != mode) && (i + 1) >= highest2)
             {
                 highest2 = (i + 1);
             }
         }
 
+        int[] valueCounts2 = new int[6];
         for (int i = 0; i < 5; ++i)
         {
             int currentValue = set[i];
-            if (currentValue != mode && currentValue != highest && currentValue != highest2)
+            if (currentValue != mode && currentValue != highest && currentValue != highest2 && ((currentValue == highest || currentValue == highest2) && valueCounts2[currentValue - 1] > 0))
             {
                 tempReroll[i] = true;
             }
+            else
+            {
+                valueCounts2[currentValue - 1]++;
+            }
+        }
+
+        if (highest == -1 || highest2 == -1)
+        {
+            for (int i = 0; i < 5; ++i)
+            {
+                tempReroll[i] = false;
+            }
+            return 0f;
         }
 
         float value = (float)((3 * mode) + highest + highest2);
-        float probability = Mathf.Pow((1f / 6f), (5 - (count + 2)));
+        float probability = Mathf.Pow((1f / 6f), (5 - (count + (highest != -1 ? 1 : 0) + (highest2 != -1 ? 1 : 0))));
         return (value * probability);
     }
 }

@@ -452,14 +452,14 @@ public class ComputerPlayer : MonoBehaviour
             }
 
             int[] bonusValues = new int[5];
-            List<bool[]> rerollArrays = new List<bool[]>();
+            List<KeyValuePair<float, bool[]>> rerollArrays = new List<KeyValuePair<float, bool[]>>();
             bool[] rerollArray = new bool[5];
             bool rerollDecision = false;
             bool isBonusSet = (SetChecker.CheckGivenSet(dieValues, ref bonusValues) != SetName.NONE);
 
             Debug.Log($"{dieValues[0]}, {dieValues[1]}, {dieValues[2]}, {dieValues[3]}, {dieValues[4]}");
 
-            if (gameMaster.GetRollsLeft() > 0)
+            if (gameMaster.GetRollsLeft() > 0 && !isBonusSet)
             {
                 for (int i = 0; i < 5; ++i)
                 {
@@ -468,24 +468,19 @@ public class ComputerPlayer : MonoBehaviour
 
                 rerollArrays = SetChecker.GetPossibleRerolls(dieValues);
 
-                float highestExpectation = -1;
-                foreach (bool[] b in rerollArrays)
+                foreach (KeyValuePair<float, bool[]> kvp in rerollArrays)
                 {
-                    if (b[0] || b[1] || b[2] || b[3] || b[4])
+                    float expectedResult = 0f;
+                    rerollDecision = GetRerollDecision(dieValues, kvp.Value, currentValue, ref expectedResult);
+                    if (rerollDecision)
                     {
-                        float expectedResult = 0f;
-                        rerollDecision = GetRerollDecision(dieValues, b, currentValue, ref expectedResult);
-                        if (rerollDecision && expectedResult > highestExpectation)
-                        {
-                            Debug.Log($"{b[0]}, {b[1]}, {b[2]}, {b[3]}, {b[4]}");
-                            highestExpectation = expectedResult;
-                            rerollArray = b;
-                        }
+                        rerollArray = kvp.Value;
+                        break;
                     }
                 }
             }
 
-            if (rerollDecision)
+            if (rerollDecision && (rerollArray[0] || rerollArray[1] || rerollArray[2] || rerollArray[3] || rerollArray[4]))
             {
                 for (int i = 0; i < 5; ++i)
                 {
@@ -562,20 +557,21 @@ public class ComputerPlayer : MonoBehaviour
                     if (isBonusSet)
                     {
                         SideType[] myActions = myField.GetActionOrderArray();
+                        SideType[] theirActions = theirField.GetActionOrderArray();
 
                         int highestTotalOutcomeValue = -1;
-                        bool reverseResult = false;
-                        for (int i = 0; i <= 2; ++i)
-                        {
-                            bool reverseOrder = (i < 2 ? !(i == 0) : reverseResult);
+                        bool selectedReverseOrder = false;
 
+                        bool reverseOrder = false;
+                        for (int i = 0; i < 3; ++i)
+                        {
                             for (int j = 0; j < 5; ++j)
                             {
                                 DieObj d = diceRolls[j];
                                 if (d == null)
                                 {
-                                    myField.TakeDieFromNumberOrderField(j);
                                     yield return new WaitForSeconds(0.15f);
+                                    myField.TakeDieFromNumberOrderField(j);
                                 }
                             }
 
@@ -586,7 +582,7 @@ public class ComputerPlayer : MonoBehaviour
                                 {
                                     if (d != null)
                                     {
-                                        if (selectedDie == null || (!reverseOrder ? d.GetCurrentSideNumber() > selectedDie.GetCurrentSideNumber() : d.GetCurrentSideNumber() < selectedDie.GetCurrentSideNumber()))
+                                        if (selectedDie == null || (((i < 2 && !reverseOrder) || (i == 2 && !selectedReverseOrder)) ? d.GetCurrentSideNumber() > selectedDie.GetCurrentSideNumber() : d.GetCurrentSideNumber() < selectedDie.GetCurrentSideNumber()))
                                         {
                                             selectedDie = d;
                                         }
@@ -600,105 +596,35 @@ public class ComputerPlayer : MonoBehaviour
                                 }
                             }
 
-                            int totalOutcomeValue = 0;
-
-                            int[] myNumberOrder = myField.GetNumberOrderArray();
-                            int[] myBonusArray = new int[5];
-
-                            int[] theirNumberOrder = theirField.GetNumberOrderArray();
-                            int[] theirBonusArray = new int[5];
-
-                            SetChecker.CheckGivenSet(myNumberOrder, ref theirBonusArray);
-                            SetChecker.CheckGivenSet(theirNumberOrder, ref theirBonusArray);
-                            for (int j = 0; i < 3 && j < 5; ++j)
-                            {
-                                int myCurrentPair = (myNumberOrder[j] + myBonusArray[j]);
-                                SideType myCurrentAction = myActions[j];
-
-                                int theirCurrentPair = (theirNumberOrder[j] + theirBonusArray[j]);
-                                SideType theirCurrentAction = opposingActions[j];
-
-                                int damage = 0;
-                                int healing = 0;
-                                int enemyLP = gameMaster.GetLPRemaining(PlayerID == PlayerCode.P1 ? PlayerCode.P2 : PlayerCode.P1);
-                                switch (myCurrentAction)
-                                {
-                                    case SideType.STRIKE:
-                                        switch (theirCurrentAction)
-                                        {
-                                            case SideType.STRIKE:
-                                                damage = (myCurrentPair - theirCurrentPair);
-                                                totalOutcomeValue += damage;
-                                                totalOutcomeValue += (gameMaster.GetLPRemaining(PlayerID) <= theirCurrentPair ? -100 : 0);
-                                                break;
-                                            case SideType.GUARD:
-                                                damage = myCurrentPair - theirCurrentPair;
-                                                damage = (damage > 0 ? damage : 0);
-                                                damage = (damage >= enemyLP ? enemyLP - 1 : damage);
-                                                int reflect = (myCurrentPair >= theirCurrentPair ? theirCurrentPair : myCurrentPair);
-                                                totalOutcomeValue += (damage - reflect);
-                                                totalOutcomeValue += (gameMaster.GetLPRemaining(PlayerID) <= reflect ? -100 : 0);
-                                                break;
-                                            case SideType.SUPPORT:
-                                                damage = (myCurrentPair + theirCurrentPair);
-                                                totalOutcomeValue += damage;
-                                                totalOutcomeValue += (damage >= enemyLP ? 100 : 0);
-                                                break;
-                                        }
-                                        break;
-                                    case SideType.GUARD:
-                                        switch (theirCurrentAction)
-                                        {
-                                            case SideType.STRIKE:
-                                                damage = myCurrentPair - theirCurrentPair;
-                                                damage = (damage > 0 ? damage : 0);
-                                                damage = (damage >= gameMaster.GetLPRemaining(PlayerID) ? gameMaster.GetLPRemaining(PlayerID) - 1 : damage);
-                                                int reflect = (myCurrentPair >= theirCurrentPair ? theirCurrentPair : myCurrentPair);
-                                                totalOutcomeValue += (reflect - damage);
-                                                totalOutcomeValue += (enemyLP <= reflect ? 100 : 0);
-                                                break;
-                                            case SideType.GUARD:
-                                                totalOutcomeValue += (theirCurrentPair - myCurrentPair);
-                                                break;
-                                            case SideType.SUPPORT:
-                                                healing = (myCurrentPair + theirCurrentPair);
-                                                healing = (enemyLP + healing > 100 ? 100 - enemyLP : healing);
-                                                totalOutcomeValue -= (myCurrentPair + theirCurrentPair);
-                                                break;
-                                        }
-                                        break;
-                                    case SideType.SUPPORT:
-                                        switch (theirCurrentAction)
-                                        {
-                                            case SideType.STRIKE:
-                                                damage = (myCurrentPair + theirCurrentPair);
-                                                totalOutcomeValue -= damage;
-                                                totalOutcomeValue += (damage >= gameMaster.GetLPRemaining(PlayerID) ? -100 : 0);
-                                                break;
-                                            case SideType.GUARD:
-                                                totalOutcomeValue += (myCurrentPair + theirCurrentPair);
-                                                break;
-                                            case SideType.SUPPORT:
-                                                totalOutcomeValue += (myCurrentPair - theirCurrentPair);
-                                                break;
-                                        }
-                                        break;
-                                }
-                            }
-
-                            if (totalOutcomeValue > highestTotalOutcomeValue)
-                            {
-                                highestTotalOutcomeValue = totalOutcomeValue;
-                                reverseResult = reverseOrder;
-                            }
-
                             if (i < 2)
                             {
+                                int[] myNumberOrder = myField.GetNumberOrderArray();
+                                int[] myBonusArray = new int[5];
+                                SetChecker.CheckGivenSet(myNumberOrder, ref myBonusArray);
+
+                                int[] theirNumberOrder = theirField.GetNumberOrderArray();
+                                int[] theirBonusArray = new int[5];
+                                SetChecker.CheckGivenSet(theirNumberOrder, ref theirBonusArray);
+
+                                int currentTotalOutcomeValue = 0;
+                                for (int j = 0; i < 2 && j < 5; ++j)
+                                {
+                                    SideType myCurrentAction = myActions[j];
+                                    int myCurrentPair = (myNumberOrder[j] + myBonusArray[j]);
+
+                                    SideType theirCurrentAction = opposingActions[j];
+                                    int theirCurrentPair = (theirNumberOrder[j - 1] + theirBonusArray[j - 1]);
+
+                                    currentTotalOutcomeValue += GetActionOutcomeValue(myCurrentAction, myCurrentPair, theirCurrentAction, theirCurrentPair);
+                                }
+
+                                if (currentTotalOutcomeValue > highestTotalOutcomeValue)
+                                {
+                                    highestTotalOutcomeValue = currentTotalOutcomeValue;
+                                    selectedReverseOrder = reverseOrder;
+                                }
+
                                 reverseOrder = !reverseOrder;
-                            }
-                            else
-                            {
-                                reverseOrder = reverseResult;
                             }
                         }
                     }
@@ -725,6 +651,8 @@ public class ComputerPlayer : MonoBehaviour
                             SideType myCurrentAction = myActions[i];
                             SideType theirCurrentAction = opposingActions[i];
 
+                            int theirCurrentPair = (theirNumberOrder[i] + theirBonusArray[i]);
+
                             DieObj selectedDie = null;
                             int highestOutcome = -999;
                             foreach (DieObj d in diceRolls)
@@ -732,76 +660,9 @@ public class ComputerPlayer : MonoBehaviour
                                 int currentOutcome = 0;
                                 if (d != null)
                                 {
-                                    int theirCurrentPair = (theirNumberOrder[i] + theirBonusArray[i]);
+                                    currentOutcome = GetActionOutcomeValue(myCurrentAction, d.GetCurrentSideNumber(), theirCurrentAction, theirCurrentPair);
 
-                                    int damage = 0;
-                                    int enemyLP = 0;
-                                    switch (myCurrentAction)
-                                    {
-                                        case SideType.STRIKE:
-                                            switch (theirCurrentAction)
-                                            {
-                                                case SideType.STRIKE:
-                                                    damage = (d.GetCurrentSideNumber() - theirCurrentPair);
-                                                    currentOutcome += damage;
-                                                    currentOutcome += (gameMaster.GetLPRemaining(PlayerID) <= theirCurrentPair ? -100 : 0);
-                                                    break;
-                                                case SideType.GUARD:
-                                                    enemyLP = gameMaster.GetLPRemaining(PlayerID == PlayerCode.P1 ? PlayerCode.P2 : PlayerCode.P1);
-                                                    damage = d.GetCurrentSideNumber() - theirCurrentPair;
-                                                    damage = (damage > 0 ? damage : 0);
-                                                    damage = (damage >= enemyLP ? enemyLP - 1 : damage);
-                                                    int reflect = (d.GetCurrentSideNumber() >= theirCurrentPair ? theirCurrentPair : d.GetCurrentSideNumber());
-                                                    currentOutcome += (damage - reflect);
-                                                    currentOutcome += (gameMaster.GetLPRemaining(PlayerID) <= reflect ? -100 : 0);
-                                                    break;
-                                                case SideType.SUPPORT:
-                                                    damage = (d.GetCurrentSideNumber() + theirCurrentPair);
-                                                    enemyLP = gameMaster.GetLPRemaining(PlayerID == PlayerCode.P1 ? PlayerCode.P2 : PlayerCode.P1);
-                                                    currentOutcome += damage;
-                                                    currentOutcome += (damage >= enemyLP ? 100 : 0);
-                                                    break;
-                                            }
-                                            break;
-                                        case SideType.GUARD:
-                                            switch (theirCurrentAction)
-                                            {
-                                                case SideType.STRIKE:
-                                                    enemyLP = gameMaster.GetLPRemaining(PlayerID == PlayerCode.P1 ? PlayerCode.P2 : PlayerCode.P1);
-                                                    damage = d.GetCurrentSideNumber() - theirCurrentPair;
-                                                    damage = (damage > 0 ? damage : 0);
-                                                    damage = (damage >= gameMaster.GetLPRemaining(PlayerID) ? gameMaster.GetLPRemaining(PlayerID) - 1 : damage);
-                                                    int reflect = (d.GetCurrentSideNumber() >= theirCurrentPair ? theirCurrentPair : d.GetCurrentSideNumber());
-                                                    currentOutcome += (reflect - damage);
-                                                    currentOutcome += (enemyLP <= reflect ? 100 : 0);
-                                                    break;
-                                                case SideType.GUARD:
-                                                    currentOutcome += (theirCurrentPair - d.GetCurrentSideNumber());
-                                                    break;
-                                                case SideType.SUPPORT:
-                                                    currentOutcome -= (d.GetCurrentSideNumber() + theirCurrentPair);
-                                                    break;
-                                            }
-                                            break;
-                                        case SideType.SUPPORT:
-                                            switch (theirCurrentAction)
-                                            {
-                                                case SideType.STRIKE:
-                                                    damage = (d.GetCurrentSideNumber() + theirCurrentPair);
-                                                    currentOutcome -= damage;
-                                                    currentOutcome += (damage >= gameMaster.GetLPRemaining(PlayerID) ? -100 : 0);
-                                                    break;
-                                                case SideType.GUARD:
-                                                    currentOutcome += (d.GetCurrentSideNumber() + theirCurrentPair);
-                                                    break;
-                                                case SideType.SUPPORT:
-                                                    currentOutcome += (d.GetCurrentSideNumber() - theirCurrentPair);
-                                                    break;
-                                            }
-                                            break;
-                                    }
-
-                                    if (currentOutcome > highestOutcome)
+                                    if (selectedDie == null || (currentOutcome > highestOutcome) || (currentOutcome == highestOutcome && d.GetCurrentSideNumber() < selectedDie.GetCurrentSideNumber()))
                                     {
                                         highestOutcome = currentOutcome;
                                         selectedDie = d;
@@ -867,7 +728,7 @@ public class ComputerPlayer : MonoBehaviour
         Debug.Log($"Expected: {expectedValue} | Current: {value}");
 
         expectedResult = expectedValue;
-        return (expectedValue >= ((float)value));
+        return (expectedValue > ((float)value));
     }
 
     private void GetNextDiceValues(int[] currentDiceValues, bool[] rerolls, int positionToIncrement = 0)
@@ -925,5 +786,143 @@ public class ComputerPlayer : MonoBehaviour
         }
 
         return numPriorityList;
+    }
+
+    private int GetActionOutcomeValue(SideType myAction, int myStrength, SideType theirAction, int theirStrength)
+    {
+        switch(myAction)
+        {
+            case SideType.STRIKE:
+                return GetStrikeOutcome(myStrength, theirAction, theirStrength);
+            case SideType.GUARD:
+                return GetGuardOutcome(myStrength, theirAction, theirStrength);
+            case SideType.SUPPORT:
+                return GetSupportOutcome(myStrength, theirAction, theirStrength);
+            default:
+                return -1;
+        }
+    }
+
+    private int GetStrikeOutcome(int myStrikeStrength, SideType theirAction, int theirStrength)
+    {
+        switch (theirAction)
+        {
+            case SideType.STRIKE:
+                return GetStrikeVsStrikeOutcome(myStrikeStrength, theirStrength);
+            case SideType.GUARD:
+                return GetStrikeVsGuardOutcome(myStrikeStrength, theirStrength);
+            case SideType.SUPPORT:
+                return GetStrikeVsSupportOutcome(myStrikeStrength, theirStrength);
+            default:
+                return -1;
+        }
+    }
+
+    private int GetGuardOutcome(int myGuardStrength, SideType theirAction, int theirStrength)
+    {
+        switch (theirAction)
+        {
+            case SideType.STRIKE:
+                return GetGuardVsStrikeOutcome(myGuardStrength, theirStrength);
+            case SideType.GUARD:
+                return GetGuardVsGuardOutcome(myGuardStrength, theirStrength);
+            case SideType.SUPPORT:
+                return GetGuardVsSupportOutcome(myGuardStrength, theirStrength);
+            default:
+                return -1;
+        }
+    }
+
+    private int GetSupportOutcome(int mySupportStrength, SideType theirAction, int theirStrength)
+    {
+        switch (theirAction)
+        {
+            case SideType.STRIKE:
+                return GetSupportVsStrikeOutcome(mySupportStrength, theirStrength);
+            case SideType.GUARD:
+                return GetSupportVsGuardOutcome(mySupportStrength, theirStrength);
+            case SideType.SUPPORT:
+                return GetSupportVsSupportOutcome(mySupportStrength, theirStrength);
+            default:
+                return -1;
+        }
+    }
+
+    private int GetStrikeVsStrikeOutcome(int myStrikeStrength, int theirStrikeStrength)
+    {
+        int myHealth = gameMaster.GetLPRemaining(PlayerID);
+        int theirHealth = gameMaster.GetLPRemaining((PlayerID == PlayerCode.P1 ? PlayerCode.P2 : PlayerCode.P1));
+
+        if (theirStrikeStrength >= myHealth) { return -100; }
+        else if (myStrikeStrength >= theirHealth) { return 100; }
+        else { return (myStrikeStrength - theirStrikeStrength); }
+    }
+
+    private int GetStrikeVsGuardOutcome(int myStrikeStrength, int theirGuardStrength)
+    {
+        int myHealth = gameMaster.GetLPRemaining(PlayerID);
+
+        int damageDealt = (myStrikeStrength - theirGuardStrength);
+        if (damageDealt < 0) { damageDealt = 0; }
+        int damageReflected = (myStrikeStrength >= theirGuardStrength ? theirGuardStrength : myStrikeStrength);
+        if (damageReflected >= myHealth) { return -100; }
+        else { return (damageDealt - damageReflected); }
+    }
+
+    private int GetStrikeVsSupportOutcome(int myStrikeStrength, int theirSupportStrength)
+    {
+        int theirHealth = gameMaster.GetLPRemaining((PlayerID == PlayerCode.P1 ? PlayerCode.P2 : PlayerCode.P1));
+
+        int damage = (myStrikeStrength + theirSupportStrength);
+        if (damage >= theirHealth) { return 100; }
+        else { return damage; }
+    }
+
+    private int GetGuardVsStrikeOutcome(int myGuardStrength, int theirStrikeStrength)
+    {
+        int theirHealth = gameMaster.GetLPRemaining((PlayerID == PlayerCode.P1 ? PlayerCode.P2 : PlayerCode.P1));
+        int damageTaken = (theirStrikeStrength - myGuardStrength);
+        if (damageTaken < 0) { damageTaken = 0; }
+        int damageReflected = (theirStrikeStrength >= myGuardStrength ? myGuardStrength : theirStrikeStrength);
+        if (damageReflected >= theirHealth) { return 100; }
+        else { return (damageReflected - damageTaken); }
+    }
+
+    private int GetGuardVsGuardOutcome(int myGuardStrength, int theirGuardStrength)
+    {
+        return (theirGuardStrength - myGuardStrength);
+    }
+
+    private int GetGuardVsSupportOutcome(int myGuardStrength, int theirSupportStrength)
+    {
+        int theirHealth = gameMaster.GetLPRemaining((PlayerID == PlayerCode.P1 ? PlayerCode.P2 : PlayerCode.P1));
+        int healing = (myGuardStrength + theirSupportStrength);
+        if ((theirHealth + healing) > 100) { healing = (100 - theirHealth); }
+        return -healing;
+    }
+
+    private int GetSupportVsStrikeOutcome(int mySupportStrength, int theirStrikeStrength)
+    {
+        int myHealth = gameMaster.GetLPRemaining(PlayerID);
+        int damageTaken = (mySupportStrength + theirStrikeStrength);
+        if (damageTaken >= myHealth) { return -100; }
+        else { return -damageTaken; }
+    }
+
+    private int GetSupportVsGuardOutcome(int mySupportStrength, int theirGuardStrength)
+    {
+        int myHealth = gameMaster.GetLPRemaining(PlayerID);
+        int healing = (mySupportStrength + theirGuardStrength);
+        if ((myHealth + healing) > 100) { healing = (100 - myHealth); }
+        return healing;
+    }
+
+    private int GetSupportVsSupportOutcome(int mySupportStrength, int theirSupportStrength)
+    {
+        int myHealth = gameMaster.GetLPRemaining(PlayerID);
+        int theirHealth = gameMaster.GetLPRemaining((PlayerID == PlayerCode.P1 ? PlayerCode.P2 : PlayerCode.P1));
+        int myHealing = ((myHealth + mySupportStrength) > 100 ? (100 - myHealth) : mySupportStrength);
+        int theirHealing = ((theirHealth + theirSupportStrength) > 100 ? (100 - theirHealth) : theirSupportStrength);
+        return (myHealing - theirHealing);
     }
 }
