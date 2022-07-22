@@ -799,7 +799,7 @@ public class TheGameMaster : MonoBehaviour
 
                         announcerText.text = $"{thisPlayerString} stopped {otherPlayerString}'s healing by attacking!";
                         yield return StartCoroutine(WaitForInput());
-                        damage = ((thisPlayerPower + otherPlayerPower) * 2);
+                        damage = (thisPlayerPower + otherPlayerPower);
                         announcerText.text = $"{thisPlayerString} dealt a boosted {damage} damage to {otherPlayerString}!";
                         PlaySound("shipCritDamage", 0.75f);
                         isDead = DealDamageTo(otherPlayer, damage, otherAction == SideType.GUARD);

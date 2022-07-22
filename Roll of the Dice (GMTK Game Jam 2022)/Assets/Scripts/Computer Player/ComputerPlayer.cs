@@ -132,8 +132,8 @@ public class ComputerPlayer : MonoBehaviour
         {
             yield return StartCoroutine(GetActionOrder());
         }
-        
 
+        yield return new WaitForSeconds(1f);
         gameMaster.PhaseChangeButtonClick();
     }
 
@@ -172,8 +172,8 @@ public class ComputerPlayer : MonoBehaviour
                 DieObj d = diceRolls[i];
                 if (d == null)
                 {
-                    myField.TakeDieFromActionOrderField(i);
                     yield return new WaitForSeconds(0.15f);
+                    myField.TakeDieFromActionOrderField(i);
                 }
             }
 
@@ -237,8 +237,8 @@ public class ComputerPlayer : MonoBehaviour
                 DieObj d = diceRolls[i];
                 if (d == null)
                 {
-                    myField.TakeDieFromActionOrderField(i);
                     yield return new WaitForSeconds(0.15f);
+                    myField.TakeDieFromActionOrderField(i);
                 }
             }
 
@@ -416,6 +416,7 @@ public class ComputerPlayer : MonoBehaviour
 
         yield return StartCoroutine(GetNumberOrder(opposingActions));
 
+        yield return new WaitForSeconds(1f);
         gameMaster.PhaseChangeButtonClick();
     }
 
@@ -423,6 +424,8 @@ public class ComputerPlayer : MonoBehaviour
     {
         PlayerField myField = gameMaster.GetPlayerField(playerCode);
         DieObj[] diceRolls = myField.DiceRolls;
+
+        PlayerField theirField = gameMaster.GetPlayerField((playerCode == PlayerCode.P1 ? PlayerCode.P2 : PlayerCode.P1));
 
         while (gameMaster.GetRollsLeft() >= 0)
         {
@@ -449,9 +452,12 @@ public class ComputerPlayer : MonoBehaviour
             }
 
             int[] bonusValues = new int[5];
+            List<bool[]> rerollArrays = new List<bool[]>();
             bool[] rerollArray = new bool[5];
             bool rerollDecision = false;
             bool isBonusSet = (SetChecker.CheckGivenSet(dieValues, ref bonusValues) != SetName.NONE);
+
+            Debug.Log($"{dieValues[0]}, {dieValues[1]}, {dieValues[2]}, {dieValues[3]}, {dieValues[4]}");
 
             if (gameMaster.GetRollsLeft() > 0)
             {
@@ -460,14 +466,21 @@ public class ComputerPlayer : MonoBehaviour
                     currentValue += bonusValues[i];
                 }
 
-                rerollArray = SetChecker.GetBestReroll(dieValues);
+                rerollArrays = SetChecker.GetPossibleRerolls(dieValues);
 
-                foreach (bool b in rerollArray)
+                float highestExpectation = -1;
+                foreach (bool[] b in rerollArrays)
                 {
-                    if (b)
+                    if (b[0] || b[1] || b[2] || b[3] || b[4])
                     {
-                        rerollDecision = (gameMaster.GetRollsLeft() > 0 && GetRerollDecision(dieValues, rerollArray, currentValue));
-                        break;
+                        float expectedResult = 0f;
+                        rerollDecision = GetRerollDecision(dieValues, b, currentValue, ref expectedResult);
+                        if (rerollDecision && expectedResult > highestExpectation)
+                        {
+                            Debug.Log($"{b[0]}, {b[1]}, {b[2]}, {b[3]}, {b[4]}");
+                            highestExpectation = expectedResult;
+                            rerollArray = b;
+                        }
                     }
                 }
             }
@@ -487,7 +500,7 @@ public class ComputerPlayer : MonoBehaviour
             }
             else
             {
-                if (opposingActions == null || isBonusSet)
+                if (opposingActions == null)
                 {
                     bool areBonusesMaximizedByPriority = false;
                     bool reverseOrder = false;
@@ -500,8 +513,9 @@ public class ComputerPlayer : MonoBehaviour
                             DieObj d = diceRolls[i];
                             if (d == null)
                             {
-                                myField.TakeDieFromNumberOrderField(i);
                                 yield return new WaitForSeconds(0.15f);
+                                myField.TakeDieFromNumberOrderField(i);
+                                
                             }
                         }
 
@@ -533,7 +547,7 @@ public class ComputerPlayer : MonoBehaviour
                         {
                             int currentPair = (numberOrder[i] + bonusArray[i]);
                             int previousPair = (numberOrder[i - 1] + bonusArray[i - 1]);
-                            if (currentPair > previousPair)
+                            if ((currentPair > previousPair))
                             {
                                 areBonusesMaximizedByPriority = false;
                                 break;
@@ -545,22 +559,251 @@ public class ComputerPlayer : MonoBehaviour
                 }
                 else
                 {
-                    SideType[] myActions = myField.GetActionOrderArray();
-                    for (int i = 0; i < 5; ++i)
+                    if (isBonusSet)
                     {
-                        SideType myAction = myActions[i];
-                        SideType theirAction = opposingActions[i];
-                        bool getHighestDie = ((myAction == SideType.STRIKE && theirAction == SideType.SUPPORT) || (myAction == SideType.GUARD && theirAction == SideType.STRIKE) || (myAction == SideType.SUPPORT && theirAction == SideType.GUARD));
+                        SideType[] myActions = myField.GetActionOrderArray();
+
+                        int highestTotalOutcomeValue = -1;
+                        bool reverseResult = false;
+                        for (int i = 0; i <= 2; ++i)
+                        {
+                            bool reverseOrder = (i < 2 ? !(i == 0) : reverseResult);
+
+                            for (int j = 0; j < 5; ++j)
+                            {
+                                DieObj d = diceRolls[j];
+                                if (d == null)
+                                {
+                                    myField.TakeDieFromNumberOrderField(j);
+                                    yield return new WaitForSeconds(0.15f);
+                                }
+                            }
+
+                            for (int j = 0; j < 5; ++j)
+                            {
+                                DieObj selectedDie = null;
+                                foreach (DieObj d in diceRolls)
+                                {
+                                    if (d != null)
+                                    {
+                                        if (selectedDie == null || (!reverseOrder ? d.GetCurrentSideNumber() > selectedDie.GetCurrentSideNumber() : d.GetCurrentSideNumber() < selectedDie.GetCurrentSideNumber()))
+                                        {
+                                            selectedDie = d;
+                                        }
+                                    }
+                                }
+
+                                if (selectedDie != null)
+                                {
+                                    yield return new WaitForSeconds(0.15f);
+                                    myField.SendDieToNumberOrderField(selectedDie.DieID + 1);
+                                }
+                            }
+
+                            int totalOutcomeValue = 0;
+
+                            int[] myNumberOrder = myField.GetNumberOrderArray();
+                            int[] myBonusArray = new int[5];
+
+                            int[] theirNumberOrder = theirField.GetNumberOrderArray();
+                            int[] theirBonusArray = new int[5];
+
+                            SetChecker.CheckGivenSet(myNumberOrder, ref theirBonusArray);
+                            SetChecker.CheckGivenSet(theirNumberOrder, ref theirBonusArray);
+                            for (int j = 0; i < 3 && j < 5; ++j)
+                            {
+                                int myCurrentPair = (myNumberOrder[j] + myBonusArray[j]);
+                                SideType myCurrentAction = myActions[j];
+
+                                int theirCurrentPair = (theirNumberOrder[j] + theirBonusArray[j]);
+                                SideType theirCurrentAction = opposingActions[j];
+
+                                int damage = 0;
+                                int healing = 0;
+                                int enemyLP = gameMaster.GetLPRemaining(PlayerID == PlayerCode.P1 ? PlayerCode.P2 : PlayerCode.P1);
+                                switch (myCurrentAction)
+                                {
+                                    case SideType.STRIKE:
+                                        switch (theirCurrentAction)
+                                        {
+                                            case SideType.STRIKE:
+                                                damage = (myCurrentPair - theirCurrentPair);
+                                                totalOutcomeValue += damage;
+                                                totalOutcomeValue += (gameMaster.GetLPRemaining(PlayerID) <= theirCurrentPair ? -100 : 0);
+                                                break;
+                                            case SideType.GUARD:
+                                                damage = myCurrentPair - theirCurrentPair;
+                                                damage = (damage > 0 ? damage : 0);
+                                                damage = (damage >= enemyLP ? enemyLP - 1 : damage);
+                                                int reflect = (myCurrentPair >= theirCurrentPair ? theirCurrentPair : myCurrentPair);
+                                                totalOutcomeValue += (damage - reflect);
+                                                totalOutcomeValue += (gameMaster.GetLPRemaining(PlayerID) <= reflect ? -100 : 0);
+                                                break;
+                                            case SideType.SUPPORT:
+                                                damage = (myCurrentPair + theirCurrentPair);
+                                                totalOutcomeValue += damage;
+                                                totalOutcomeValue += (damage >= enemyLP ? 100 : 0);
+                                                break;
+                                        }
+                                        break;
+                                    case SideType.GUARD:
+                                        switch (theirCurrentAction)
+                                        {
+                                            case SideType.STRIKE:
+                                                damage = myCurrentPair - theirCurrentPair;
+                                                damage = (damage > 0 ? damage : 0);
+                                                damage = (damage >= gameMaster.GetLPRemaining(PlayerID) ? gameMaster.GetLPRemaining(PlayerID) - 1 : damage);
+                                                int reflect = (myCurrentPair >= theirCurrentPair ? theirCurrentPair : myCurrentPair);
+                                                totalOutcomeValue += (reflect - damage);
+                                                totalOutcomeValue += (enemyLP <= reflect ? 100 : 0);
+                                                break;
+                                            case SideType.GUARD:
+                                                totalOutcomeValue += (theirCurrentPair - myCurrentPair);
+                                                break;
+                                            case SideType.SUPPORT:
+                                                healing = (myCurrentPair + theirCurrentPair);
+                                                healing = (enemyLP + healing > 100 ? 100 - enemyLP : healing);
+                                                totalOutcomeValue -= (myCurrentPair + theirCurrentPair);
+                                                break;
+                                        }
+                                        break;
+                                    case SideType.SUPPORT:
+                                        switch (theirCurrentAction)
+                                        {
+                                            case SideType.STRIKE:
+                                                damage = (myCurrentPair + theirCurrentPair);
+                                                totalOutcomeValue -= damage;
+                                                totalOutcomeValue += (damage >= gameMaster.GetLPRemaining(PlayerID) ? -100 : 0);
+                                                break;
+                                            case SideType.GUARD:
+                                                totalOutcomeValue += (myCurrentPair + theirCurrentPair);
+                                                break;
+                                            case SideType.SUPPORT:
+                                                totalOutcomeValue += (myCurrentPair - theirCurrentPair);
+                                                break;
+                                        }
+                                        break;
+                                }
+                            }
+
+                            if (totalOutcomeValue > highestTotalOutcomeValue)
+                            {
+                                highestTotalOutcomeValue = totalOutcomeValue;
+                                reverseResult = reverseOrder;
+                            }
+
+                            if (i < 2)
+                            {
+                                reverseOrder = !reverseOrder;
+                            }
+                            else
+                            {
+                                reverseOrder = reverseResult;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        SideType[] myActions = myField.GetActionOrderArray();
+
+                        int[] theirNumberOrder = theirField.GetNumberOrderArray();
+                        int[] theirBonusArray = new int[5];
+                        SetChecker.CheckGivenSet(theirNumberOrder, ref theirBonusArray);
 
                         for (int j = 0; j < 5; ++j)
                         {
+                            DieObj d = diceRolls[j];
+                            if (d == null)
+                            {
+                                myField.TakeDieFromNumberOrderField(j);
+                                yield return new WaitForSeconds(0.15f);
+                            }
+                        }
+
+                        for (int i = 0; i < 5; ++i)
+                        {
+                            SideType myCurrentAction = myActions[i];
+                            SideType theirCurrentAction = opposingActions[i];
+
                             DieObj selectedDie = null;
+                            int highestOutcome = -999;
                             foreach (DieObj d in diceRolls)
                             {
+                                int currentOutcome = 0;
                                 if (d != null)
                                 {
-                                    if (selectedDie == null || (getHighestDie ? d.GetCurrentSideNumber() > selectedDie.GetCurrentSideNumber() : d.GetCurrentSideNumber() < selectedDie.GetCurrentSideNumber()))
+                                    int theirCurrentPair = (theirNumberOrder[i] + theirBonusArray[i]);
+
+                                    int damage = 0;
+                                    int enemyLP = 0;
+                                    switch (myCurrentAction)
                                     {
+                                        case SideType.STRIKE:
+                                            switch (theirCurrentAction)
+                                            {
+                                                case SideType.STRIKE:
+                                                    damage = (d.GetCurrentSideNumber() - theirCurrentPair);
+                                                    currentOutcome += damage;
+                                                    currentOutcome += (gameMaster.GetLPRemaining(PlayerID) <= theirCurrentPair ? -100 : 0);
+                                                    break;
+                                                case SideType.GUARD:
+                                                    enemyLP = gameMaster.GetLPRemaining(PlayerID == PlayerCode.P1 ? PlayerCode.P2 : PlayerCode.P1);
+                                                    damage = d.GetCurrentSideNumber() - theirCurrentPair;
+                                                    damage = (damage > 0 ? damage : 0);
+                                                    damage = (damage >= enemyLP ? enemyLP - 1 : damage);
+                                                    int reflect = (d.GetCurrentSideNumber() >= theirCurrentPair ? theirCurrentPair : d.GetCurrentSideNumber());
+                                                    currentOutcome += (damage - reflect);
+                                                    currentOutcome += (gameMaster.GetLPRemaining(PlayerID) <= reflect ? -100 : 0);
+                                                    break;
+                                                case SideType.SUPPORT:
+                                                    damage = (d.GetCurrentSideNumber() + theirCurrentPair);
+                                                    enemyLP = gameMaster.GetLPRemaining(PlayerID == PlayerCode.P1 ? PlayerCode.P2 : PlayerCode.P1);
+                                                    currentOutcome += damage;
+                                                    currentOutcome += (damage >= enemyLP ? 100 : 0);
+                                                    break;
+                                            }
+                                            break;
+                                        case SideType.GUARD:
+                                            switch (theirCurrentAction)
+                                            {
+                                                case SideType.STRIKE:
+                                                    enemyLP = gameMaster.GetLPRemaining(PlayerID == PlayerCode.P1 ? PlayerCode.P2 : PlayerCode.P1);
+                                                    damage = d.GetCurrentSideNumber() - theirCurrentPair;
+                                                    damage = (damage > 0 ? damage : 0);
+                                                    damage = (damage >= gameMaster.GetLPRemaining(PlayerID) ? gameMaster.GetLPRemaining(PlayerID) - 1 : damage);
+                                                    int reflect = (d.GetCurrentSideNumber() >= theirCurrentPair ? theirCurrentPair : d.GetCurrentSideNumber());
+                                                    currentOutcome += (reflect - damage);
+                                                    currentOutcome += (enemyLP <= reflect ? 100 : 0);
+                                                    break;
+                                                case SideType.GUARD:
+                                                    currentOutcome += (theirCurrentPair - d.GetCurrentSideNumber());
+                                                    break;
+                                                case SideType.SUPPORT:
+                                                    currentOutcome -= (d.GetCurrentSideNumber() + theirCurrentPair);
+                                                    break;
+                                            }
+                                            break;
+                                        case SideType.SUPPORT:
+                                            switch (theirCurrentAction)
+                                            {
+                                                case SideType.STRIKE:
+                                                    damage = (d.GetCurrentSideNumber() + theirCurrentPair);
+                                                    currentOutcome -= damage;
+                                                    currentOutcome += (damage >= gameMaster.GetLPRemaining(PlayerID) ? -100 : 0);
+                                                    break;
+                                                case SideType.GUARD:
+                                                    currentOutcome += (d.GetCurrentSideNumber() + theirCurrentPair);
+                                                    break;
+                                                case SideType.SUPPORT:
+                                                    currentOutcome += (d.GetCurrentSideNumber() - theirCurrentPair);
+                                                    break;
+                                            }
+                                            break;
+                                    }
+
+                                    if (currentOutcome > highestOutcome)
+                                    {
+                                        highestOutcome = currentOutcome;
                                         selectedDie = d;
                                     }
                                 }
@@ -568,6 +811,7 @@ public class ComputerPlayer : MonoBehaviour
 
                             if (selectedDie != null)
                             {
+                                Debug.Log($"{selectedDie.GetCurrentSideNumber()} {theirNumberOrder[i] + theirBonusArray[i]} ---> {highestOutcome}");
                                 yield return new WaitForSeconds(0.15f);
                                 myField.SendDieToNumberOrderField(selectedDie.DieID + 1);
                             }
@@ -581,7 +825,7 @@ public class ComputerPlayer : MonoBehaviour
         yield return null;
     }
 
-    private bool GetRerollDecision(int[] values, bool[] rerolls, int value)
+    private bool GetRerollDecision(int[] values, bool[] rerolls, int value, ref float expectedResult)
     {
         int[] currentDiceValues = new int[5];
         List<int[]> listOfArrays = new List<int[]>();
@@ -620,7 +864,10 @@ public class ComputerPlayer : MonoBehaviour
         }
         float expectedValue = ((float)resultSum / (float)maxRollsNeeded);
 
-        return (expectedValue >= ((float) value));
+        Debug.Log($"Expected: {expectedValue} | Current: {value}");
+
+        expectedResult = expectedValue;
+        return (expectedValue >= ((float)value));
     }
 
     private void GetNextDiceValues(int[] currentDiceValues, bool[] rerolls, int positionToIncrement = 0)

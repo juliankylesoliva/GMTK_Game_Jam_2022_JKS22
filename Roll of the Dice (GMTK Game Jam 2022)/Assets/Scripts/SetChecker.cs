@@ -37,23 +37,17 @@ public class SetChecker : MonoBehaviour
         }
     }
 
-    public static bool[] GetBestReroll(int[] set)
+    public static List<bool[]> GetPossibleRerolls(int[] set)
     {
-        bool[] result = new bool[5];
+        List<bool[]> result = new List<bool[]>();
 
-        SetName[] setNames = new SetName[] { SetName.YACHT, SetName.BIG_STRAIGHT, SetName.LITTLE_STRAIGHT, SetName.FOUR_OF_A_KIND, SetName.FULL_HOUSE };
-
-        float bestExpectedValue = -1f;
+        SetName[] setNames = new SetName[] { SetName.YACHT, SetName.BIG_STRAIGHT, SetName.LITTLE_STRAIGHT, SetName.FOUR_OF_A_KIND, SetName.FULL_HOUSE, SetName.NONE };
 
         foreach (SetName n in setNames)
         {
             bool[] tempReroll = new bool[5];
-            float currentExpectation = GetExpectedValueOfGivenSet(n, set, ref tempReroll);
-            if (currentExpectation > bestExpectedValue)
-            {
-                result = tempReroll;
-                bestExpectedValue = currentExpectation;
-            }
+            Debug.Log($"{GetSetNameString(n)}: {GetExpectedValueOfGivenSet(n, set, ref tempReroll)}");
+            result.Add(tempReroll);
         }
 
         return result;
@@ -210,6 +204,8 @@ public class SetChecker : MonoBehaviour
                 return GetExpectedValueOfFourOfAKind(set, ref tempReroll);
             case SetName.FULL_HOUSE:
                 return GetExpectedValueOfFullHouse(set, ref tempReroll);
+            case SetName.NONE:
+                return GetExpectedValueOfChance(set, ref tempReroll);
             default:
                 return -1f;
         }
@@ -378,5 +374,61 @@ public class SetChecker : MonoBehaviour
         float value = (float)(13 + (3 * mode) + (2 * mode2));
         float probability = Mathf.Pow((1f / 6f), (5 - (count + count2)));
         return (value * probability);
-    } 
+    }
+
+    private static float GetExpectedValueOfChance(int[] set, ref bool[] tempReroll)
+    {
+        int[] valueCounts = new int[6];
+
+        for (int i = 0; i < 5; ++i)
+        {
+            int currentValue = set[i];
+            valueCounts[currentValue - 1]++;
+        }
+
+        int mode = -1;
+        int count = 0;
+        for (int i = 0; i < 6; ++i)
+        {
+            int currentCount = valueCounts[i];
+            if (currentCount >= count)
+            {
+                count = currentCount;
+                mode = (i + 1);
+            }
+        }
+
+        int highest = -1;
+        for (int i = 0; i < 6; ++i)
+        {
+            int currentCount = valueCounts[i];
+            if (currentCount > 0 && ((i + 1) != mode) && (i + 1) > highest)
+            {
+                highest = (i + 1);
+            }
+        }
+
+        int highest2 = -1;
+        for (int i = 0; i < 6; ++i)
+        {
+            int currentCount = valueCounts[i];
+            if (currentCount >= 0 && ((i + 1) != mode) && (i + 1) > highest2)
+            {
+                highest2 = (i + 1);
+            }
+        }
+
+        for (int i = 0; i < 5; ++i)
+        {
+            int currentValue = set[i];
+            if (currentValue != mode && currentValue != highest && currentValue != highest2)
+            {
+                tempReroll[i] = true;
+            }
+        }
+
+        float value = (float)((3 * mode) + highest + highest2);
+        float probability = Mathf.Pow((1f / 6f), (5 - (count + 2)));
+        return (value * probability);
+    }
 }
