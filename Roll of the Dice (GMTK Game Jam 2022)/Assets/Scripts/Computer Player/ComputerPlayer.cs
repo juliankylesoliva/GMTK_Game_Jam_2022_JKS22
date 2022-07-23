@@ -2,6 +2,8 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+public enum SelectionMethod { RANDOM_DICE_SELECTION, RANDOM_SET_SELECTION, BEST_SET_EXPECTATION, BEST_ROLL_EXPECTATION }
+
 public class ComputerPlayer : MonoBehaviour
 {
     [SerializeField] PlayerCode playerCode = PlayerCode.P2;
@@ -10,9 +12,11 @@ public class ComputerPlayer : MonoBehaviour
     [SerializeField] DiceDeck_SO overrideDeck = null; // For debug purposes
     [SerializeField] ActDie_SO[] initialDicePool;
 
-    [Header("ACTION PRIORITY PARAMETERS")]
+    [Header("COMPUTER PLAYER PARAMETERS")]
     [SerializeField, Range(0, 99)] int lifePointDifferenceThreshold = 20;
     [SerializeField, Range(1, 99)] int dangerThreshold = 30;
+    [SerializeField] SelectionMethod bonusSelectionMethod = SelectionMethod.BEST_ROLL_EXPECTATION;
+    [SerializeField, Range(0, 100)] int blunderRate = 0;
 
     TheGameMaster gameMaster;
 
@@ -292,7 +296,7 @@ public class ComputerPlayer : MonoBehaviour
                             {
                                 ActionDieObj currentActDie = (ActionDieObj)d;
                                 float currentProbability = currentActDie.GetProbabiltyOfSide(kvp.Key);
-                                if ((gameMaster.GetRollsLeft() == 0 && currentActDie.GetCurrentSideType() == kvp.Key) || (currentActDie.GetCurrentSideType() == kvp.Key && currentProbability > highestProbability))
+                                if (((Random.Range(0, 100) + 1) <= blunderRate) || (gameMaster.GetRollsLeft() == 0 && currentActDie.GetCurrentSideType() == kvp.Key) || (currentActDie.GetCurrentSideType() == kvp.Key && currentProbability > highestProbability))
                                 {
                                     selectedDie = currentActDie;
                                     highestProbability = currentProbability;
@@ -455,7 +459,7 @@ public class ComputerPlayer : MonoBehaviour
             List<KeyValuePair<float, bool[]>> rerollArrays = new List<KeyValuePair<float, bool[]>>();
             bool[] rerollArray = new bool[5];
             bool rerollDecision = false;
-            bool isBonusSet = (SetChecker.CheckGivenSet(dieValues, ref bonusValues) != SetName.NONE);
+            bool isBonusSet = (SetChecker.CheckGivenSet(dieValues, ref bonusValues, true) != SetName.NONE);
 
             Debug.Log($"{dieValues[0]}, {dieValues[1]}, {dieValues[2]}, {dieValues[3]}, {dieValues[4]}");
 
@@ -468,16 +472,37 @@ public class ComputerPlayer : MonoBehaviour
 
                 rerollArrays = SetChecker.GetPossibleRerolls(dieValues);
 
-                foreach (KeyValuePair<float, bool[]> kvp in rerollArrays)
+                float expectedResult = 0f;
+                switch (bonusSelectionMethod)
                 {
-                    float expectedResult = 0f;
-                    rerollDecision = GetRerollDecision(dieValues, kvp.Value, currentValue, ref expectedResult);
-                    if (rerollDecision)
-                    {
-                        rerollArray = kvp.Value;
+                    case SelectionMethod.BEST_ROLL_EXPECTATION:
+                        foreach (KeyValuePair<float, bool[]> kvp in rerollArrays)
+                        {
+                            rerollDecision = GetRerollDecision(dieValues, kvp.Value, currentValue, ref expectedResult);
+                            if (rerollDecision)
+                            {
+                                rerollArray = kvp.Value;
+                                break;
+                            }
+                        }
                         break;
-                    }
+                    case SelectionMethod.BEST_SET_EXPECTATION:
+                        rerollDecision = GetRerollDecision(dieValues, rerollArrays[0].Value, currentValue, ref expectedResult);
+                        break;
+                    case SelectionMethod.RANDOM_SET_SELECTION:
+                        rerollDecision = GetRerollDecision(dieValues, rerollArrays[Random.Range(0, rerollArrays.Count)].Value, currentValue, ref expectedResult);
+                        break;
+                    case SelectionMethod.RANDOM_DICE_SELECTION:
+                        rerollArray[0] = (Random.Range(0, 2) == 0);
+                        rerollArray[1] = (Random.Range(0, 2) == 0);
+                        rerollArray[2] = (Random.Range(0, 2) == 0);
+                        rerollArray[3] = (Random.Range(0, 2) == 0);
+                        rerollArray[4] = (Random.Range(0, 2) == 0);
+                        rerollDecision = true;
+                        break;
                 }
+
+                
             }
 
             if (rerollDecision && (rerollArray[0] || rerollArray[1] || rerollArray[2] || rerollArray[3] || rerollArray[4]))
@@ -613,7 +638,7 @@ public class ComputerPlayer : MonoBehaviour
                                     int myCurrentPair = (myNumberOrder[j] + myBonusArray[j]);
 
                                     SideType theirCurrentAction = opposingActions[j];
-                                    int theirCurrentPair = (theirNumberOrder[j - 1] + theirBonusArray[j - 1]);
+                                    int theirCurrentPair = (theirNumberOrder[j] + theirBonusArray[j]);
 
                                     currentTotalOutcomeValue += GetActionOutcomeValue(myCurrentAction, myCurrentPair, theirCurrentAction, theirCurrentPair);
                                 }
@@ -662,7 +687,7 @@ public class ComputerPlayer : MonoBehaviour
                                 {
                                     currentOutcome = GetActionOutcomeValue(myCurrentAction, d.GetCurrentSideNumber(), theirCurrentAction, theirCurrentPair);
 
-                                    if (selectedDie == null || (currentOutcome > highestOutcome) || (currentOutcome == highestOutcome && d.GetCurrentSideNumber() < selectedDie.GetCurrentSideNumber()))
+                                    if (selectedDie == null || ((Random.Range(0, 100) + 1) <= blunderRate) || (currentOutcome > highestOutcome) || (currentOutcome == highestOutcome && d.GetCurrentSideNumber() < selectedDie.GetCurrentSideNumber()))
                                     {
                                         highestOutcome = currentOutcome;
                                         selectedDie = d;

@@ -6,9 +6,30 @@ public enum SetName { NONE, FOUR_OF_A_KIND, FULL_HOUSE, LITTLE_STRAIGHT, BIG_STR
 
 public class SetChecker : MonoBehaviour
 {
-    public static SetName CheckGivenSet(int[] set, ref int[] bonusArray)
+    public static SetName CheckGivenSet(int[] set, ref int[] bonusArray, bool sort = false)
     {
         if (set.Length != 5) { return SetName.NONE; }
+
+        if (sort)
+        {
+            for (int i = 0; i < 5; ++i)
+            {
+                int highestIndex = -1;
+                int highestNumber = -1;
+                for (int j = 0; j < 5 - i; ++j)
+                {
+                    int currentNumber = set[j];
+                    if (currentNumber > highestNumber)
+                    {
+                        highestIndex = j;
+                        highestNumber = currentNumber;
+                    }
+                }
+                int temp = set[0];
+                set[0] = highestNumber;
+                set[highestIndex] = temp;
+            }
+        }
 
         if (IsYacht(set, ref bonusArray))
         {

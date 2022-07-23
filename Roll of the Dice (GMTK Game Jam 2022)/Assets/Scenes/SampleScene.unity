@@ -10078,6 +10078,8 @@ MonoBehaviour:
   - {fileID: 11400000, guid: f39f071407192f54fb607ba3314ecea5, type: 2}
   lifePointDifferenceThreshold: 20
   dangerThreshold: 30
+  bonusSelectionMethod: 3
+  blunderRate: 0
 --- !u!1 &1518021671
 GameObject:
   m_ObjectHideFlags: 0
