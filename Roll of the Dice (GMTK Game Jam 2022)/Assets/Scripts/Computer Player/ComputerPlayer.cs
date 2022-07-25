@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public enum SelectionMethod { RANDOM_DICE_SELECTION, RANDOM_SET_SELECTION, BEST_SET_EXPECTATION, BEST_ROLL_EXPECTATION }
+public enum SelectionMethod { RANDOM_DICE_SELECTION, FLIP_DICE_DECISIONS, BEST_SET_EXPECTATION, BEST_ROLL_EXPECTATION }
 
 public class ComputerPlayer : MonoBehaviour
 {
@@ -13,10 +13,7 @@ public class ComputerPlayer : MonoBehaviour
     [SerializeField] ActDie_SO[] initialDicePool;
 
     [Header("COMPUTER PLAYER PARAMETERS")]
-    [SerializeField, Range(0, 99)] int lifePointDifferenceThreshold = 20;
-    [SerializeField, Range(1, 99)] int dangerThreshold = 30;
-    [SerializeField] SelectionMethod bonusSelectionMethod = SelectionMethod.BEST_ROLL_EXPECTATION;
-    [SerializeField, Range(0, 100)] int blunderRate = 0;
+    [SerializeField] ComputerPlayerParameters comParams;
 
     TheGameMaster gameMaster;
 
@@ -253,27 +250,27 @@ public class ComputerPlayer : MonoBehaviour
                 switch (s)
                 {
                     case SideType.STRIKE:
-                        priorityOrder.Add(new KeyValuePair<SideType, int>(SideType.GUARD, 1));
+                        priorityOrder.Add(new KeyValuePair<SideType, int>(comParams.strikeMatchupPriorities[0], 1));
                         if (gameMaster.GetRollsLeft() == 0)
                         {
-                            priorityOrder.Add(new KeyValuePair<SideType, int>(SideType.STRIKE, 1));
-                            priorityOrder.Add(new KeyValuePair<SideType, int>(SideType.SUPPORT, 1));
+                            priorityOrder.Add(new KeyValuePair<SideType, int>(comParams.strikeMatchupPriorities[1], 1));
+                            priorityOrder.Add(new KeyValuePair<SideType, int>(comParams.strikeMatchupPriorities[2], 1));
                         }
                         break;
                     case SideType.GUARD:
-                        priorityOrder.Add(new KeyValuePair<SideType, int>(SideType.SUPPORT, 1));
+                        priorityOrder.Add(new KeyValuePair<SideType, int>(comParams.guardMatchupPriorities[0], 1));
                         if (gameMaster.GetRollsLeft() == 0)
                         {
-                            priorityOrder.Add(new KeyValuePair<SideType, int>(SideType.GUARD, 1));
-                            priorityOrder.Add(new KeyValuePair<SideType, int>(SideType.STRIKE, 1));
+                            priorityOrder.Add(new KeyValuePair<SideType, int>(comParams.guardMatchupPriorities[1], 1));
+                            priorityOrder.Add(new KeyValuePair<SideType, int>(comParams.guardMatchupPriorities[2], 1));
                         }
                         break;
                     case SideType.SUPPORT:
-                        priorityOrder.Add(new KeyValuePair<SideType, int>(SideType.STRIKE, 1));
+                        priorityOrder.Add(new KeyValuePair<SideType, int>(comParams.supportMatchupPriorities[0], 1));
                         if (gameMaster.GetRollsLeft() == 0)
                         {
-                            priorityOrder.Add(new KeyValuePair<SideType, int>(SideType.SUPPORT, 1));
-                            priorityOrder.Add(new KeyValuePair<SideType, int>(SideType.GUARD, 1));
+                            priorityOrder.Add(new KeyValuePair<SideType, int>(comParams.supportMatchupPriorities[1], 1));
+                            priorityOrder.Add(new KeyValuePair<SideType, int>(comParams.supportMatchupPriorities[2], 1));
                         }
                         break;
                 }
@@ -296,7 +293,7 @@ public class ComputerPlayer : MonoBehaviour
                             {
                                 ActionDieObj currentActDie = (ActionDieObj)d;
                                 float currentProbability = currentActDie.GetProbabiltyOfSide(kvp.Key);
-                                if (((Random.Range(0, 100) + 1) <= blunderRate) || (gameMaster.GetRollsLeft() == 0 && currentActDie.GetCurrentSideType() == kvp.Key) || (currentActDie.GetCurrentSideType() == kvp.Key && currentProbability > highestProbability))
+                                if ((gameMaster.GetRollsLeft() == 0 && currentActDie.GetCurrentSideType() == kvp.Key) || (currentActDie.GetCurrentSideType() == kvp.Key && currentProbability > highestProbability))
                                 {
                                     selectedDie = currentActDie;
                                     highestProbability = currentProbability;
@@ -338,12 +335,12 @@ public class ComputerPlayer : MonoBehaviour
         int supportPriorityLevel = 0;
 
         int lpDiff = gameMaster.GetLPDifference(PlayerCode.P2);
-        if (lpDiff != 0 && lpDiff >= lifePointDifferenceThreshold) // AI has more LP remaining than the player.
+        if (lpDiff != 0 && lpDiff >= comParams.lifePointDifferenceThreshold) // AI has more LP remaining than the player.
         {
             strikePriorityLevel += 2;
             guardPriorityLevel += 1;
         }
-        else if (lpDiff != 0 && lpDiff <= -lifePointDifferenceThreshold) // AI has fewer LP remaining than the player.
+        else if (lpDiff != 0 && lpDiff <= -comParams.lifePointDifferenceThreshold) // AI has fewer LP remaining than the player.
         {
             guardPriorityLevel += 2;
             supportPriorityLevel += 1;
@@ -356,12 +353,12 @@ public class ComputerPlayer : MonoBehaviour
         }
 
         int lpRemaining = gameMaster.GetLPRemaining(PlayerCode.P2);
-        if (lpRemaining <= dangerThreshold)
+        if (lpRemaining <= comParams.dangerThreshold)
         {
             guardPriorityLevel += 1;
             supportPriorityLevel += 1;
         }
-        else if (lpRemaining > dangerThreshold && lpRemaining < TheGameMaster.MAX_LIFE_POINTS)
+        else if (lpRemaining > comParams.dangerThreshold && lpRemaining < TheGameMaster.MAX_LIFE_POINTS)
         {
             strikePriorityLevel += 1;
             guardPriorityLevel += 1;
@@ -373,7 +370,7 @@ public class ComputerPlayer : MonoBehaviour
         }
 
         int enemyLPRemaining = gameMaster.GetLPRemaining(PlayerCode.P1);
-        if (enemyLPRemaining <= dangerThreshold)
+        if (enemyLPRemaining <= comParams.dangerThreshold)
         {
             strikePriorityLevel += 2;
         }
@@ -381,6 +378,10 @@ public class ComputerPlayer : MonoBehaviour
         {
             strikePriorityLevel += 1;
         }
+
+        strikePriorityLevel *= comParams.strikePriorityWeight;
+        guardPriorityLevel *= comParams.guardPriorityWeight;
+        supportPriorityLevel *= comParams.supportPriorityWeight;
 
         int sum = strikePriorityLevel + guardPriorityLevel + supportPriorityLevel;
 
@@ -473,7 +474,7 @@ public class ComputerPlayer : MonoBehaviour
                 rerollArrays = SetChecker.GetPossibleRerolls(dieValues);
 
                 float expectedResult = 0f;
-                switch (bonusSelectionMethod)
+                switch (comParams.bonusSelectionMethod)
                 {
                     case SelectionMethod.BEST_ROLL_EXPECTATION:
                         foreach (KeyValuePair<float, bool[]> kvp in rerollArrays)
@@ -489,15 +490,19 @@ public class ComputerPlayer : MonoBehaviour
                     case SelectionMethod.BEST_SET_EXPECTATION:
                         rerollDecision = GetRerollDecision(dieValues, rerollArrays[0].Value, currentValue, ref expectedResult);
                         break;
-                    case SelectionMethod.RANDOM_SET_SELECTION:
+                    case SelectionMethod.FLIP_DICE_DECISIONS:
                         rerollDecision = GetRerollDecision(dieValues, rerollArrays[Random.Range(0, rerollArrays.Count)].Value, currentValue, ref expectedResult);
+                        for (int i = 0; i < 5; ++i)
+                        {
+                            rerollArray[i] = !rerollArray[i];
+                        }
                         break;
                     case SelectionMethod.RANDOM_DICE_SELECTION:
-                        rerollArray[0] = (Random.Range(0, 2) == 0);
-                        rerollArray[1] = (Random.Range(0, 2) == 0);
-                        rerollArray[2] = (Random.Range(0, 2) == 0);
-                        rerollArray[3] = (Random.Range(0, 2) == 0);
-                        rerollArray[4] = (Random.Range(0, 2) == 0);
+                        rerollArray[0] = (Random.Range(0, 100) < comParams.diceRerollProbability);
+                        rerollArray[1] = (Random.Range(0, 100) < comParams.diceRerollProbability);
+                        rerollArray[2] = (Random.Range(0, 100) < comParams.diceRerollProbability);
+                        rerollArray[3] = (Random.Range(0, 100) < comParams.diceRerollProbability);
+                        rerollArray[4] = (Random.Range(0, 100) < comParams.diceRerollProbability);
                         rerollDecision = true;
                         break;
                 }
@@ -687,7 +692,7 @@ public class ComputerPlayer : MonoBehaviour
                                 {
                                     currentOutcome = GetActionOutcomeValue(myCurrentAction, d.GetCurrentSideNumber(), theirCurrentAction, theirCurrentPair);
 
-                                    if (selectedDie == null || ((Random.Range(0, 100) + 1) <= blunderRate) || (currentOutcome > highestOutcome) || (currentOutcome == highestOutcome && d.GetCurrentSideNumber() < selectedDie.GetCurrentSideNumber()))
+                                    if (selectedDie == null || (currentOutcome > highestOutcome) || (currentOutcome == highestOutcome && d.GetCurrentSideNumber() < selectedDie.GetCurrentSideNumber()))
                                     {
                                         highestOutcome = currentOutcome;
                                         selectedDie = d;
@@ -754,29 +759,6 @@ public class ComputerPlayer : MonoBehaviour
 
         expectedResult = expectedValue;
         return (expectedValue > ((float)value));
-    }
-
-    private void GetNextDiceValues(int[] currentDiceValues, bool[] rerolls, int positionToIncrement = 0)
-    {
-        if (positionToIncrement >= 0 && positionToIncrement <= 4)
-        {
-            if (rerolls[positionToIncrement])
-            {
-                if (currentDiceValues[positionToIncrement] == 6)
-                {
-                    currentDiceValues[positionToIncrement] = 1;
-                    GetNextDiceValues(currentDiceValues, rerolls, positionToIncrement + 1);
-                }
-                else
-                {
-                    currentDiceValues[positionToIncrement]++;
-                }
-            }
-            else
-            {
-                GetNextDiceValues(currentDiceValues, rerolls, positionToIncrement + 1);
-            }
-        }
     }
 
     private List<KeyValuePair<int, int>> GetNumberPriority(int[] set)
