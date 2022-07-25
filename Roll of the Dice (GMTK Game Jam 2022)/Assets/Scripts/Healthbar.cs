@@ -4,60 +4,39 @@ using UnityEngine;
 
 public class Healthbar : MonoBehaviour
 {
-    private enum ShipAnimationState { IDLE, DAMAGE, SINKING }
-
-    [SerializeField] float idleAmplitude = 1f;
-    [SerializeField] float idleRadiansPerSecond = 3.141592f;
-    [SerializeField, Range(0f, 0.5f)] float radsPerSecDeviation = 0.25f;
+    private enum AnimationState { IDLE, DAMAGE }
 
     [SerializeField] float damageShakeAmplitude = 1f;
     [SerializeField] int shakeAfterEveryXFrames = 2;
-
-    [SerializeField] float sinkingSpeed = 0.5f;
-    [SerializeField] float sinkingYLimit = -50f;
+    [SerializeField] float pixelsPerUnit = 32f;
+    [SerializeField, Range(-1, 1)] int drainDirection = -1;
 
     [SerializeField] Transform meterFill;
 
     private Vector3 startingPosition;
-    private ShipAnimationState currentState = ShipAnimationState.IDLE;
+    private Vector3 startingFillPosition;
+    private Vector3 endingFillPosition;
+    private AnimationState currentState = AnimationState.IDLE;
     private float animTimer = 0f;
-    private float currentRadians = 0f;
     private bool shakeRight = false;
     private int shakeTimer = 0;
 
     void Start()
     {
         startingPosition = this.transform.position;
-        FloatShip();
+        startingFillPosition = meterFill.localPosition;
+        endingFillPosition = (startingFillPosition + (Vector3.right * (float)drainDirection * (1f/pixelsPerUnit) * 100f));
+        Idle();
     }
 
     void Update()
     {
         switch (currentState)
         {
-            case ShipAnimationState.IDLE:
-                currentRadians += (idleRadiansPerSecond * Time.deltaTime * Random.Range(1f - radsPerSecDeviation, 1f + radsPerSecDeviation));
-                this.transform.position = (startingPosition + (Vector3.up * ((idleAmplitude * Mathf.Sin(currentRadians)) - idleAmplitude)));
+            case AnimationState.IDLE:
                 break;
-            case ShipAnimationState.DAMAGE:
+            case AnimationState.DAMAGE:
                 this.transform.position = (new Vector3(startingPosition.x, this.transform.position.y, startingPosition.z) + ((shakeRight ? Vector3.right : -Vector3.right) * damageShakeAmplitude * (animTimer / 1f)));
-                if (shakeTimer == 0)
-                {
-                    shakeRight = !shakeRight;
-                    shakeTimer = shakeAfterEveryXFrames;
-                }
-                else
-                {
-                    shakeTimer--;
-                }
-                break;
-            case ShipAnimationState.SINKING:
-                this.transform.position = (new Vector3(startingPosition.x, this.transform.position.y, startingPosition.z)  + ((shakeRight ? Vector3.right : -Vector3.right) * damageShakeAmplitude));
-                if (this.transform.position.y > sinkingYLimit)
-                {
-                    this.transform.position -= (Vector3.up * sinkingSpeed * Time.deltaTime);
-                }
-
                 if (shakeTimer == 0)
                 {
                     shakeRight = !shakeRight;
@@ -76,41 +55,30 @@ public class Healthbar : MonoBehaviour
         {
             switch (currentState)
             {
-                case ShipAnimationState.IDLE:
+                case AnimationState.IDLE:
                     break;
-                case ShipAnimationState.DAMAGE:
-                    FloatShip();
-                    break;
-                case ShipAnimationState.SINKING:
+                case AnimationState.DAMAGE:
+                    Idle();
                     break;
             }
         }
     }
 
-    public void SetFillScale(float ratio)
+    public void SetFillPosition(float ratio)
     {
-        meterFill.localScale = new Vector3(1f, ratio, 1f);
+        meterFill.localPosition = Vector3.Lerp(startingFillPosition, endingFillPosition, 1f - ratio);
     }
 
-    private void FloatShip()
+    private void Idle()
     {
-        currentState = ShipAnimationState.IDLE;
-        animTimer = 0;
+        currentState = AnimationState.IDLE;
     }
 
-    public void DamageShip()
+    public void Damage()
     {
-        currentState = ShipAnimationState.DAMAGE;
+        currentState = AnimationState.DAMAGE;
         shakeRight = true;
         shakeTimer = shakeAfterEveryXFrames;
         animTimer = 1f;
-    }
-
-    public void SinkShip()
-    {
-        currentState = ShipAnimationState.SINKING;
-        shakeRight = true;
-        shakeTimer = shakeAfterEveryXFrames;
-        animTimer = 0;
     }
 }

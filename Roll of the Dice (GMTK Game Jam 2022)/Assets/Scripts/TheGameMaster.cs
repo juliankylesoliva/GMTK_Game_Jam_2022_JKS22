@@ -35,6 +35,12 @@ public class TheGameMaster : MonoBehaviour
 
     [SerializeField] GameObject nextPhaseButton;
 
+    [SerializeField] SpriteRenderer p1PortraitFrame;
+    [SerializeField] SpriteRenderer p2PortraitFrame;
+
+    [SerializeField] DiceQueueHUD p1DiceQueue;
+    [SerializeField] DiceQueueHUD p2DiceQueue;
+
     [SerializeField] TMP_Text p1LPText;
     [SerializeField] TMP_Text p2LPText;
 
@@ -99,13 +105,13 @@ public class TheGameMaster : MonoBehaviour
 
     void Update()
     {
-        p1LPText.text = $"P1\n{p1CurrentLP} LP";
-        p1LPText.color = (currentPhase != GamePhase.BATTLE && currentTurn == PlayerCode.P1 && flashCounter > 30 ? Color.blue : Color.white);
-        p1Healthbar.SetFillScale((float)p1CurrentLP / (float)p1MaxLP);
+        p1LPText.text = $"{p1CurrentLP} LP";
+        p1PortraitFrame.color = (currentPhase != GamePhase.BATTLE && currentTurn == PlayerCode.P1 && flashCounter > 30 ? Color.blue : Color.white);
+        p1Healthbar.SetFillPosition((float)p1CurrentLP / (float)p1MaxLP);
 
-        p2LPText.text = $"P2\n{p2CurrentLP} LP";
-        p2LPText.color = (currentPhase != GamePhase.BATTLE && currentTurn == PlayerCode.P2 && flashCounter > 30 ? Color.red : Color.white);
-        p2Healthbar.SetFillScale((float)p2CurrentLP / (float)p2MaxLP);
+        p2LPText.text = $"{p2CurrentLP} LP";
+        p2PortraitFrame.color = (currentPhase != GamePhase.BATTLE && currentTurn == PlayerCode.P2 && flashCounter > 30 ? Color.red : Color.white);
+        p2Healthbar.SetFillPosition((float)p2CurrentLP / (float)p2MaxLP);
 
         if (flashCounter > 0)
         {
@@ -620,6 +626,9 @@ public class TheGameMaster : MonoBehaviour
 
         for (int i = 0; i < 5; ++i)
         {
+            p1DiceQueue.UpdateQueueDisplay(playerField1.ActionOrder);
+            p2DiceQueue.UpdateQueueDisplay(playerField2.ActionOrder);
+
             skyBackground.ChangeSkyColor(i);
 
             ActionDieObj p1ActDie = playerField1.TakeNextActionDie();
@@ -667,18 +676,12 @@ public class TheGameMaster : MonoBehaviour
 
             if (p1CurrentLP <= 0 || p2CurrentLP <= 0)
             {
-                if (p1CurrentLP <= 0)
-                {
-                    DeclareVictor(PlayerCode.P2);
-                    yield break;
-                }
-                else
-                {
-                    DeclareVictor(PlayerCode.P1);
-                    yield break;
-                }
+                break;
             }
         }
+
+        p1DiceQueue.UpdateQueueDisplay(playerField1.ActionOrder);
+        p2DiceQueue.UpdateQueueDisplay(playerField2.ActionOrder);
 
         if (p1CurrentLP <= 0 || p2CurrentLP <= 0)
         {
@@ -803,7 +806,7 @@ public class TheGameMaster : MonoBehaviour
                         announcerText.text = $"{thisPlayerString} dealt a boosted {damage} damage to {otherPlayerString}!";
                         PlaySound("shipCritDamage", 0.75f);
                         isDead = DealDamageTo(otherPlayer, damage, otherAction == SideType.GUARD);
-                        (otherPlayer == PlayerCode.P1 ? p1Healthbar : p2Healthbar).DamageShip();
+                        (otherPlayer == PlayerCode.P1 ? p1Healthbar : p2Healthbar).Damage();
                         if (isDead) { yield break; }
                         break;
                     case SideType.GUARD:
@@ -819,13 +822,13 @@ public class TheGameMaster : MonoBehaviour
                         announcerText.text = $"{thisPlayerString} held on and took {damage} damage!";
                         PlaySound("shipBlock", 0.85f);
                         DealDamageTo(current, damage, thisAction == SideType.GUARD);
-                        (current == PlayerCode.P1 ? p1Healthbar : p2Healthbar).DamageShip();
+                        (current == PlayerCode.P1 ? p1Healthbar : p2Healthbar).Damage();
                         yield return StartCoroutine(WaitForInput());
                         damage = (otherPlayerPower > thisPlayerPower ? thisPlayerPower : otherPlayerPower);
                         announcerText.text = $"{thisPlayerString} reflected {damage} damage to {otherPlayerString}!";
                         PlaySound("shipDamage", 0.75f);
                         isDead = DealDamageTo(otherPlayer, damage, otherAction == SideType.GUARD);
-                        (otherPlayer == PlayerCode.P1 ? p1Healthbar : p2Healthbar).DamageShip();
+                        (otherPlayer == PlayerCode.P1 ? p1Healthbar : p2Healthbar).Damage();
                         if (isDead) { yield break; }
                         break;
                     case SideType.SUPPORT:
@@ -858,7 +861,7 @@ public class TheGameMaster : MonoBehaviour
                         announcerText.text = $"{otherPlayerString} took {damage} damage!";
                         PlaySound("shipDamage", 0.75f);
                         bool isDead = DealDamageTo(otherPlayer, damage, otherAction == SideType.GUARD);
-                        (otherPlayer == PlayerCode.P1 ? p1Healthbar : p2Healthbar).DamageShip();
+                        (otherPlayer == PlayerCode.P1 ? p1Healthbar : p2Healthbar).Damage();
                         if (isDead) { yield break; }
                         break;
                     case SideType.GUARD:
@@ -967,11 +970,11 @@ public class TheGameMaster : MonoBehaviour
         {
             case PlayerCode.P1:
                 announcerText.text = "Player 1 Wins!";
-                p2Healthbar.SinkShip();
+                p2Healthbar.Damage();
                 break;
             case PlayerCode.P2:
                 announcerText.text = "Player 2 Wins!";
-                p1Healthbar.SinkShip();
+                p1Healthbar.Damage();
                 break;
         }
     }
