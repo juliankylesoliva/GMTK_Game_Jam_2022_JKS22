@@ -53,6 +53,9 @@ public class TheGameMaster : MonoBehaviour
     [SerializeField] Healthbar p1Healthbar;
     [SerializeField] Healthbar p2Healthbar;
 
+    [SerializeField] Transform p1CurrentDieSlot;
+    [SerializeField] Transform p2CurrentDieSlot;
+
     [SerializeField] SkyColors skyBackground;
 
     [SerializeField] GameObject menuPanel;
@@ -85,11 +88,23 @@ public class TheGameMaster : MonoBehaviour
     private int p2MaxLP;
     private int p2CurrentLP;
 
+    private static Color _strikeColor;
+    public static Color StrikeColor { get { return _strikeColor; } }
+
+    private static Color _guardColor;
+    public static Color GuardColor { get { return _guardColor; } }
+
+    private static Color _supportColor;
+    public static Color SupportColor { get { return _supportColor; } }
+
     void Awake()
     {
         Application.targetFrameRate = 60;
         audioSource = this.gameObject.GetComponent<AudioSource>();
         computerPlayer = this.gameObject.GetComponent<ComputerPlayer>();
+        _strikeColor = strikeColor;
+        _guardColor = guardColor;
+        _supportColor = supportColor;
     }
 
     void Start()
@@ -397,6 +412,8 @@ public class TheGameMaster : MonoBehaviour
         firstRoll = true;
         rollsLeft = (currentTurn == firstPlayer ? 2 : 3);
 
+        PlayerField currentPlayer = (currentTurn == PlayerCode.P1 ? playerField1 : playerField2);
+
         announcerText.text = $"{(currentTurn == PlayerCode.P1 ? "Player 1" : "Player 2")}, roll and choose your Action Dice!";
 
         if (!IsComputerPlayer(currentTurn))
@@ -448,6 +465,8 @@ public class TheGameMaster : MonoBehaviour
 
             yield return null;
         }
+
+        (currentTurn == PlayerCode.P1 ? p1DiceQueue : p2DiceQueue).UpdateQueueDisplay(currentPlayer.ActionOrder);
 
         changePhase = false;
         rollsLeft = 0;
@@ -567,6 +586,9 @@ public class TheGameMaster : MonoBehaviour
         currentPlayer.AssignActionStrengths();
         currentPlayer.AssignSetBonuses(bonusArray);
 
+        (currentTurn == PlayerCode.P1 ? p1DiceQueue : p2DiceQueue).UpdateQueueDisplay(currentPlayer.ActionOrder);
+        (currentTurn == PlayerCode.P1 ? p1SetBonusText : p2SetBonusText).gameObject.SetActive(false);
+
         if (currentTurn == firstPlayer)
         {
             PlayerCode nextPlayer = (currentTurn == PlayerCode.P1 ? PlayerCode.P2 : PlayerCode.P1);
@@ -626,37 +648,35 @@ public class TheGameMaster : MonoBehaviour
 
         for (int i = 0; i < 5; ++i)
         {
-            p1DiceQueue.UpdateQueueDisplay(playerField1.ActionOrder);
-            p2DiceQueue.UpdateQueueDisplay(playerField2.ActionOrder);
-
             skyBackground.ChangeSkyColor(i);
 
             ActionDieObj p1ActDie = playerField1.TakeNextActionDie();
             DieObj p1NumDie = playerField1.TakeNextNumberDie();
             SideType p1Action = p1ActDie.GetCurrentSideType();
-            int p1TotalPower = (p1ActDie.Strength + p1ActDie.Bonus - p1ActDie.Preference);
+            int p1TotalPower = (p1ActDie.Strength + p1ActDie.Bonus);
             if (p1TotalPower < 0)
             {
                 p1TotalPower = 0;
             }
 
-            p1ActDie.transform.position += (Vector3.right * 1.25f);
-            p1NumDie.transform.position += (Vector3.right * 1.25f);
+            p1ActDie.transform.position = p1CurrentDieSlot.position;
 
             ActionDieObj p2ActDie = playerField2.TakeNextActionDie();
             DieObj p2NumDie = playerField2.TakeNextNumberDie();
             SideType p2Action = p2ActDie.GetCurrentSideType();
-            int p2TotalPower = (p2ActDie.Strength + p2ActDie.Bonus - p2ActDie.Preference);
+            int p2TotalPower = (p2ActDie.Strength + p2ActDie.Bonus);
             if (p2TotalPower < 0)
             {
                 p2TotalPower = 0;
             }
 
-            p2ActDie.transform.position -= (Vector3.right * 1.25f);
-            p2NumDie.transform.position -= (Vector3.right * 1.25f);
+            p2ActDie.transform.position = p2CurrentDieSlot.position;
 
             p1SetBonusText.gameObject.SetActive(false);
             p2SetBonusText.gameObject.SetActive(false);
+
+            p1DiceQueue.UpdateQueueDisplay(playerField1.ActionOrder);
+            p2DiceQueue.UpdateQueueDisplay(playerField2.ActionOrder);
 
             PlayerAdvantage priority = GetMatchupPriority(p1Action, p2Action);
             yield return StartCoroutine(ResolutionStep(priority, p1Action, p1TotalPower, p2Action, p2TotalPower));
@@ -890,14 +910,12 @@ public class TheGameMaster : MonoBehaviour
 
     private IEnumerator WaitForInput()
     {
-        yield return new WaitForSeconds(1f);
-        nextPhaseButton.SetActive(true);
-        while (!changePhase)
+        float currentTimer = 2f;
+        while (!Input.GetMouseButtonDown(0) && currentTimer > 0f)
         {
+            currentTimer -= Time.deltaTime;
             yield return null;
         }
-        changePhase = false;
-        nextPhaseButton.SetActive(false);
     }
 
     private bool DealDamageTo(PlayerCode player, int damage, bool isGuarding)

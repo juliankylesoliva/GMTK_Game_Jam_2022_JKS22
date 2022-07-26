@@ -34,19 +34,6 @@ public class ActionDieObj : DieObj
         }
     }
 
-    private int preference = 0;
-    public int Preference
-    {
-        get { return preference; }
-        set
-        {
-            if (value > 0)
-            {
-                preference = value;
-            }
-        }
-    }
-
     void Update()
     {
         if (currentSideIndex >= 0 && !isRolling)
