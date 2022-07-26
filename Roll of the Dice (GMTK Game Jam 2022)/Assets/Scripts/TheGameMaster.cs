@@ -56,6 +56,9 @@ public class TheGameMaster : MonoBehaviour
     [SerializeField] Transform p1CurrentDieSlot;
     [SerializeField] Transform p2CurrentDieSlot;
 
+    [SerializeField] RollsLeftHUD p1RollsLeft;
+    [SerializeField] RollsLeftHUD p2RollsLeft;
+
     [SerializeField] SkyColors skyBackground;
 
     [SerializeField] GameObject menuPanel;
@@ -413,8 +416,10 @@ public class TheGameMaster : MonoBehaviour
         rollsLeft = (currentTurn == firstPlayer ? 2 : 3);
 
         PlayerField currentPlayer = (currentTurn == PlayerCode.P1 ? playerField1 : playerField2);
+        currentPlayer.ShowField();
 
-        announcerText.text = $"{(currentTurn == PlayerCode.P1 ? "Player 1" : "Player 2")}, roll and choose your Action Dice!";
+        announcerText.text = $"{(currentTurn == PlayerCode.P1 ? "Player 1" : "Player 2")}'s ACTION PHASE!";
+        yield return new WaitForSeconds(1f);
 
         if (!IsComputerPlayer(currentTurn))
         {
@@ -453,7 +458,7 @@ public class TheGameMaster : MonoBehaviour
 
             if (rollButtonText.gameObject.activeSelf)
             {
-                rollButtonText.text = $"Rolls: {rollsLeft}";
+                (currentTurn == PlayerCode.P1 ? p1RollsLeft : p2RollsLeft).SetRerollAmount(rollsLeft);
             }
 
             if (rollButton.activeSelf && rollsLeft <= 0)
@@ -465,8 +470,6 @@ public class TheGameMaster : MonoBehaviour
 
             yield return null;
         }
-
-        (currentTurn == PlayerCode.P1 ? p1DiceQueue : p2DiceQueue).UpdateQueueDisplay(currentPlayer.ActionOrder);
 
         changePhase = false;
         rollsLeft = 0;
@@ -488,7 +491,8 @@ public class TheGameMaster : MonoBehaviour
 
         PlayerField currentPlayer = (currentTurn == PlayerCode.P1 ? playerField1 : playerField2);
 
-        announcerText.text = $"{(currentTurn == PlayerCode.P1 ? "Player 1" : "Player 2")}, roll and pair up your Numbered Dice!.";
+        announcerText.text = $"{(currentTurn == PlayerCode.P1 ? "Player 1" : "Player 2")}'s NUMBER PHASE!";
+        yield return new WaitForSeconds(1f);
 
         if (!IsComputerPlayer(currentTurn))
         {
@@ -528,7 +532,7 @@ public class TheGameMaster : MonoBehaviour
 
             if (rollButtonText.gameObject.activeSelf)
             {
-                rollButtonText.text = $"Rolls: {rollsLeft}";
+                (currentTurn == PlayerCode.P1 ? p1RollsLeft : p2RollsLeft).SetRerollAmount(rollsLeft);
             }
 
             if (rollButton.activeSelf && rollsLeft <= 0)
@@ -550,13 +554,13 @@ public class TheGameMaster : MonoBehaviour
                     {
                         p1SetBonusText.gameObject.SetActive(true);
 
-                        p1SetBonusText.text = $"{SetChecker.GetSetNameString(currentSet)}\n\n+{bonusArray[4]} +{bonusArray[3]} +{bonusArray[2]} +{bonusArray[1]} +{bonusArray[0]}";
+                        p1SetBonusText.text = $"{SetChecker.GetSetNameString(currentSet)}\n+{bonusArray[4]} +{bonusArray[3]} +{bonusArray[2]} +{bonusArray[1]} +{bonusArray[0]}";
                     }
                     else
                     {
                         p2SetBonusText.gameObject.SetActive(true);
 
-                        p2SetBonusText.text = $"{SetChecker.GetSetNameString(currentSet)}\n\n+{bonusArray[0]} +{bonusArray[1]} +{bonusArray[2]} +{bonusArray[3]} +{bonusArray[4]}";
+                        p2SetBonusText.text = $"{SetChecker.GetSetNameString(currentSet)}\n+{bonusArray[0]} +{bonusArray[1]} +{bonusArray[2]} +{bonusArray[3]} +{bonusArray[4]}";
                     }
                 }
             }
@@ -588,6 +592,8 @@ public class TheGameMaster : MonoBehaviour
 
         (currentTurn == PlayerCode.P1 ? p1DiceQueue : p2DiceQueue).UpdateQueueDisplay(currentPlayer.ActionOrder);
         (currentTurn == PlayerCode.P1 ? p1SetBonusText : p2SetBonusText).gameObject.SetActive(false);
+        (currentTurn == PlayerCode.P1 ? p1RollsLeft : p2RollsLeft).SetRerollAmount(0);
+        currentPlayer.HideField();
 
         if (currentTurn == firstPlayer)
         {
@@ -645,6 +651,9 @@ public class TheGameMaster : MonoBehaviour
     private IEnumerator BattlePhase()
     {
         currentPhase = GamePhase.BATTLE;
+
+        announcerText.text = "BATTLE PHASE!";
+        yield return new WaitForSeconds(1f);
 
         for (int i = 0; i < 5; ++i)
         {
@@ -911,11 +920,13 @@ public class TheGameMaster : MonoBehaviour
     private IEnumerator WaitForInput()
     {
         float currentTimer = 2f;
+        yield return null;
         while (!Input.GetMouseButtonDown(0) && currentTimer > 0f)
         {
             currentTimer -= Time.deltaTime;
             yield return null;
         }
+        yield return null;
     }
 
     private bool DealDamageTo(PlayerCode player, int damage, bool isGuarding)

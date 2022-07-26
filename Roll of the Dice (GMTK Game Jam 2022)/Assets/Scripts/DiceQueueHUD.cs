@@ -49,6 +49,7 @@ public class DiceQueueHUD : MonoBehaviour
             {
                 spritePositions[i].color = Color.clear;
                 spritePositions[i].sprite = spriteList[3];
+                textPositions[i].color = Color.white;
                 textPositions[i].text = "--";
             }
         }

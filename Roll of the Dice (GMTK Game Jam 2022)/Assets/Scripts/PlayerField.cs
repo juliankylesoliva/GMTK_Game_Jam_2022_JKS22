@@ -28,6 +28,8 @@ public class PlayerField : MonoBehaviour
     private ActionDieObj[] actionDiceRefs = new ActionDieObj[5];
     private DieObj[] numberDiceRefs = new DieObj[5];
 
+    private Vector3 originalPosition;
+
     private bool isComputerControlled = false;
     public bool IsCPU
     {
@@ -38,6 +40,7 @@ public class PlayerField : MonoBehaviour
     void Awake()
     {
         audioSource = this.gameObject.GetComponent<AudioSource>();
+        originalPosition = this.transform.position;
     }
 
     void Update()
@@ -250,6 +253,16 @@ public class PlayerField : MonoBehaviour
     private bool IsItMyTurnYet()
     {
         return playerCode == TheGameMaster.GetCurrentTurn();
+    }
+
+    public void HideField()
+    {
+        this.transform.position = (originalPosition + (Vector3.up * -50f));
+    }
+
+    public void ShowField()
+    {
+        this.transform.position = originalPosition;
     }
 
     public void PlaySound(string clipName, float volume)
