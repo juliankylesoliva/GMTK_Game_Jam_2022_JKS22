@@ -59,6 +59,8 @@ public class TheGameMaster : MonoBehaviour
     [SerializeField] RollsLeftHUD p1RollsLeft;
     [SerializeField] RollsLeftHUD p2RollsLeft;
 
+    [SerializeField] PhaseMapHUD phaseMap;
+
     [SerializeField] SkyColors skyBackground;
 
     [SerializeField] GameObject menuPanel;
@@ -418,6 +420,12 @@ public class TheGameMaster : MonoBehaviour
         PlayerField currentPlayer = (currentTurn == PlayerCode.P1 ? playerField1 : playerField2);
         currentPlayer.ShowField();
 
+        if (firstPlayer == currentTurn)
+        {
+            phaseMap.MovePlayerToPhasePosition(PlayerCode.P1, GamePhase.ACTION);
+            phaseMap.MovePlayerToPhasePosition(PlayerCode.P2, GamePhase.ACTION);
+        }
+
         announcerText.text = $"{(currentTurn == PlayerCode.P1 ? "Player 1" : "Player 2")}'s ACTION PHASE!";
         yield return new WaitForSeconds(1f);
 
@@ -490,6 +498,8 @@ public class TheGameMaster : MonoBehaviour
         rollsLeft = (currentTurn == firstPlayer ? 2 : 3);
 
         PlayerField currentPlayer = (currentTurn == PlayerCode.P1 ? playerField1 : playerField2);
+
+        phaseMap.MovePlayerToPhasePosition(currentTurn, GamePhase.NUMBER);
 
         announcerText.text = $"{(currentTurn == PlayerCode.P1 ? "Player 1" : "Player 2")}'s NUMBER PHASE!";
         yield return new WaitForSeconds(1f);
@@ -651,6 +661,9 @@ public class TheGameMaster : MonoBehaviour
     private IEnumerator BattlePhase()
     {
         currentPhase = GamePhase.BATTLE;
+
+        phaseMap.MovePlayerToPhasePosition(PlayerCode.P1, GamePhase.BATTLE);
+        phaseMap.MovePlayerToPhasePosition(PlayerCode.P2, GamePhase.BATTLE);
 
         announcerText.text = "BATTLE PHASE!";
         yield return new WaitForSeconds(1f);
