@@ -423,11 +423,7 @@ public class TheGameMaster : MonoBehaviour
         PlayerField currentPlayer = (currentTurn == PlayerCode.P1 ? playerField1 : playerField2);
         currentPlayer.ShowField();
 
-        if (firstPlayer == currentTurn)
-        {
-            phaseMap.MovePlayerToPhasePosition(PlayerCode.P1, GamePhase.ACTION);
-            phaseMap.MovePlayerToPhasePosition(PlayerCode.P2, GamePhase.ACTION);
-        }
+        phaseMap.MovePlayerToPhasePosition(currentTurn, GamePhase.ACTION);
 
         announcerText.text = $"{(currentTurn == PlayerCode.P1 ? "Player 1" : "Player 2")}'s ACTION PHASE!";
         yield return new WaitForSeconds(1f);
@@ -727,6 +723,11 @@ public class TheGameMaster : MonoBehaviour
 
         p1DiceQueue.UpdateQueueDisplay(playerField1.ActionOrder);
         p2DiceQueue.UpdateQueueDisplay(playerField2.ActionOrder);
+
+        phaseMap.MovePlayerToPhasePosition(PlayerCode.P1, GamePhase.END);
+        phaseMap.MovePlayerToPhasePosition(PlayerCode.P2, GamePhase.END);
+
+        yield return new WaitForSeconds(1f);
 
         if (p1CurrentLP <= 0 || p2CurrentLP <= 0)
         {

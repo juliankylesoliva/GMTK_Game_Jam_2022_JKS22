@@ -7,10 +7,12 @@ public class PhaseMapHUD : MonoBehaviour
     [SerializeField] Transform p1MapIcon;
     [SerializeField] Transform p2MapIcon;
 
+    [SerializeField] Transform p1StandbyPosition;
     [SerializeField] Transform p1ActPhasePos;
     [SerializeField] Transform p1NumPhasePos;
     [SerializeField] Transform p1BattlePhasePos;
 
+    [SerializeField] Transform p2StandbyPosition;
     [SerializeField] Transform p2ActPhasePos;
     [SerializeField] Transform p2NumPhasePos;
     [SerializeField] Transform p2BattlePhasePos;
@@ -31,7 +33,7 @@ public class PhaseMapHUD : MonoBehaviour
                 phasePosition = (player == PlayerCode.P1 ? p1BattlePhasePos.position : p2BattlePhasePos.position);
                 break;
             default:
-                phasePosition = (player == PlayerCode.P1 ? p1ActPhasePos.position : p2ActPhasePos.position);
+                phasePosition = (player == PlayerCode.P1 ? p1StandbyPosition.position : p2StandbyPosition.position);
                 break;
         }
         StartCoroutine(TransformToPosition(playerTransform, phasePosition));
