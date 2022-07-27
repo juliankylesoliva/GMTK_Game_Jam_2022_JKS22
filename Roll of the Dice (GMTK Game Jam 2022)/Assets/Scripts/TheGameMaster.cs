@@ -17,6 +17,9 @@ public class TheGameMaster : MonoBehaviour
     [SerializeField] Color guardColor;
     [SerializeField] Color supportColor;
 
+    [SerializeField] GameObject damageNumberPrefab;
+    [SerializeField] GameObject healingNumberPrefab;
+
     [SerializeField] PlayerField playerField1;
     [SerializeField] PlayerField playerField2;
 
@@ -944,6 +947,9 @@ public class TheGameMaster : MonoBehaviour
 
     private bool DealDamageTo(PlayerCode player, int damage, bool isGuarding)
     {
+        GameObject tempObj = Instantiate(damageNumberPrefab, (player == PlayerCode.P1 ? p1Healthbar.transform.position : p2Healthbar.transform.position), Quaternion.identity);
+        DamageNumber tempDmgNumObj = tempObj.GetComponent<DamageNumber>();
+        tempDmgNumObj.Setup(damage, (isGuarding ? guardColor : strikeColor));
         switch (player)
         {
             case PlayerCode.P1:
@@ -984,6 +990,9 @@ public class TheGameMaster : MonoBehaviour
 
     private void RestoreLifePointsTo(PlayerCode player, int healing)
     {
+        GameObject tempObj = Instantiate(healingNumberPrefab, (player == PlayerCode.P1 ? p1Healthbar.transform.position : p2Healthbar.transform.position), Quaternion.identity);
+        HealingNumber tempHealNumObj = tempObj.GetComponent<HealingNumber>();
+        tempHealNumObj.Setup(healing, supportColor);
         switch (player)
         {
             case PlayerCode.P1:
