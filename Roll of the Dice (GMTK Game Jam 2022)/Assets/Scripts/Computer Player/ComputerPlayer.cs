@@ -462,7 +462,7 @@ public class ComputerPlayer : MonoBehaviour
             bool rerollDecision = false;
             bool isBonusSet = (SetChecker.CheckGivenSet(dieValues, ref bonusValues, true) != SetName.NONE);
 
-            Debug.Log($"{dieValues[0]}, {dieValues[1]}, {dieValues[2]}, {dieValues[3]}, {dieValues[4]}");
+            //Debug.Log($"{dieValues[0]}, {dieValues[1]}, {dieValues[2]}, {dieValues[3]}, {dieValues[4]}");
 
             if (gameMaster.GetRollsLeft() > 0 && !isBonusSet)
             {
@@ -702,7 +702,7 @@ public class ComputerPlayer : MonoBehaviour
 
                             if (selectedDie != null)
                             {
-                                Debug.Log($"{selectedDie.GetCurrentSideNumber()} {theirNumberOrder[i] + theirBonusArray[i]} ---> {highestOutcome}");
+                                //Debug.Log($"{selectedDie.GetCurrentSideNumber()} {theirNumberOrder[i] + theirBonusArray[i]} ---> {highestOutcome}");
                                 yield return new WaitForSeconds(0.15f);
                                 myField.SendDieToNumberOrderField(selectedDie.DieID + 1);
                             }
@@ -755,7 +755,7 @@ public class ComputerPlayer : MonoBehaviour
         }
         float expectedValue = ((float)resultSum / (float)maxRollsNeeded);
 
-        Debug.Log($"Expected: {expectedValue} | Current: {value}");
+        //Debug.Log($"Expected: {expectedValue} | Current: {value}");
 
         expectedResult = expectedValue;
         return (expectedValue > ((float)value));

@@ -315,6 +315,11 @@ public class TheGameMaster : MonoBehaviour
         StartCoroutine(Deckbuilder());
     }
 
+    public IEnumerator AbilitySelect()
+    {
+        yield break;
+    }
+
     public IEnumerator Deckbuilder()
     {
         for (int i = 0; i < 2; ++i)
