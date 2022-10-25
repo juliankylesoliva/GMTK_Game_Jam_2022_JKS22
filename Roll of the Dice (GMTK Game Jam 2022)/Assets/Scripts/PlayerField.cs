@@ -23,6 +23,9 @@ public class PlayerField : MonoBehaviour
     public DieObj[] NumberOrder { get { return numberOrderField.GetDiceObjectArray(); } }
     public int[] NumberOrderValues { get { return numberOrderField.GetDiceValueArray(); } }
 
+    [SerializeField] AbilityBase chosenAbility;
+    public AbilityBase ChosenAbility { get { return chosenAbility; } set { chosenAbility = value; } }
+
     AudioSource audioSource;
 
     private ActionDieObj[] actionDiceRefs = new ActionDieObj[5];
@@ -48,6 +51,7 @@ public class PlayerField : MonoBehaviour
         if (!isComputerControlled)
         {
             CheckIfDiceClickedOn();
+            CheckIfAbilityCounterClickedOn();
         }
     }
 
@@ -171,6 +175,23 @@ public class PlayerField : MonoBehaviour
                         TakeDieFromNumberOrderField(tempDie.DieID);
                     }
                     else {/* Nothing */}
+                }
+            }
+        }
+    }
+
+    private void CheckIfAbilityCounterClickedOn()
+    {
+        if (IsItMyTurnYet() && TheGameMaster.GetCurrentPhase() == GamePhase.NUMBER && Input.GetMouseButtonDown(0))
+        {
+            RaycastHit2D hit = Physics2D.Raycast(Camera.main.ScreenToWorldPoint(Input.mousePosition), Vector2.zero);
+            if (hit.collider != null)
+            {
+                AbilityCounter tempCounter = hit.transform.gameObject.GetComponent<AbilityCounter>();
+                if (tempCounter != null && chosenAbility.ContainsAbilityCounter(tempCounter))
+                {
+                    if (tempCounter.CurrentState != AbilityCounterState.Selected) { chosenAbility.ResetSelectedCounters(); }
+                    tempCounter.DoCounterClick();
                 }
             }
         }

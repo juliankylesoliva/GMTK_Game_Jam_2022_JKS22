@@ -7,6 +7,9 @@ public abstract class AbilityBase : MonoBehaviour
     [SerializeField] GameObject counterPrefab;
     [SerializeField] Transform[] counterLocations;
 
+    [SerializeField] protected string abilityName;
+    protected string AbilityName { get { return AbilityName; } }
+
     [SerializeField] bool is1Available = false;
     [SerializeField] bool is2Available = false;
     [SerializeField] bool is3Available = false;
@@ -24,9 +27,14 @@ public abstract class AbilityBase : MonoBehaviour
 
     protected abstract IEnumerator AbilityProcedure(int dieNum);
 
-    public IEnumerator ActivateAbility(int dieNum)
+    public IEnumerator ActivateAbility()
     {
-        yield return StartCoroutine(AbilityProcedure(dieNum));
+        AbilityCounter selectedCounter = FindFirstSelectedCounter();
+        if (selectedCounter == null) { yield break; }
+
+        selectedCounter.SetState(AbilityCounterState.Used);
+        Debug.Log($"Activated {abilityName}!!!");
+        yield return StartCoroutine(AbilityProcedure(selectedCounter.CurrentNumber));
     }
 
     private void Setup()
@@ -60,5 +68,39 @@ public abstract class AbilityBase : MonoBehaviour
                 break;
             }
         }
+    }
+
+    private AbilityCounter FindFirstSelectedCounter()
+    {
+        foreach (AbilityCounter counter in counterRefs)
+        {
+            if (counter != null && counter.CurrentState == AbilityCounterState.Selected)
+            {
+                return counter;
+            }
+        }
+        return null;
+    }
+
+    public void ResetSelectedCounters()
+    {
+        foreach (AbilityCounter counter in counterRefs)
+        {
+            if (counter != null && counter.CurrentState == AbilityCounterState.Selected)
+            {
+                counter.SetState(AbilityCounterState.Unselected);
+            }
+        }
+    }
+
+    public bool ContainsAbilityCounter(AbilityCounter counterObj)
+    {
+        foreach (AbilityCounter a in counterRefs) {
+            if (a != null && GameObject.ReferenceEquals(counterObj, a))
+            {
+                return true;
+            }
+        }
+        return false;
     }
 }

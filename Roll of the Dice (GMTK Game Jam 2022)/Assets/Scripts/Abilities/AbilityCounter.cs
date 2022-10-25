@@ -15,6 +15,9 @@ public class AbilityCounter : MonoBehaviour
     private AbilityCounterState currentCounterState = AbilityCounterState.Unselected;
     public AbilityCounterState CurrentState { get { return currentCounterState; } }
 
+    private int currentNumber = 1;
+    public int CurrentNumber { get { return currentNumber; } }
+
     void Awake()
     {
         counterSprite = this.gameObject.GetComponent<SpriteRenderer>();
@@ -63,5 +66,6 @@ public class AbilityCounter : MonoBehaviour
     {
         if (num < 1 || num > 6) { return; }
         counterSprite.sprite = spriteList[num - 1];
+        currentNumber = num;
     }
 }

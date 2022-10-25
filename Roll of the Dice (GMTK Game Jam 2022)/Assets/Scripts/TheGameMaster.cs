@@ -312,11 +312,22 @@ public class TheGameMaster : MonoBehaviour
                 break;
         }
         currentTurn = firstPlayer;
-        StartCoroutine(Deckbuilder());
+        StartCoroutine(AbilitySelect());
     }
 
-    public IEnumerator AbilitySelect()
+    public IEnumerator AbilitySelect() // Temp
     {
+        if (playerField1.ChosenAbility != null)
+        {
+
+        }
+
+        if (playerField2.ChosenAbility != null)
+        {
+
+        }
+
+        StartCoroutine(Deckbuilder());
         yield break;
     }
 
@@ -672,7 +683,17 @@ public class TheGameMaster : MonoBehaviour
         announcerText.text = "BATTLE PHASE!";
         yield return new WaitForSeconds(1f);
 
-        for (int i = 0; i < 5; ++i)
+        for (int i = 0; i < 2; ++i)
+        {
+            PlayerField currentField = (i == 0 ? GetPlayerField(firstPlayer) : GetPlayerField(firstPlayer == PlayerCode.P1 ? PlayerCode.P2 : PlayerCode.P1));
+
+            if (currentField.ChosenAbility != null)
+            {
+                yield return StartCoroutine(currentField.ChosenAbility.ActivateAbility());
+            }
+        }
+
+        for (int i = 0; p1CurrentLP > 0 && p2CurrentLP > 0 && i < 5; ++i)
         {
             skyBackground.ChangeSkyColor(i);
 
@@ -719,11 +740,6 @@ public class TheGameMaster : MonoBehaviour
 
             announcerText.text = "";
             announcerText.color = Color.white;
-
-            if (p1CurrentLP <= 0 || p2CurrentLP <= 0)
-            {
-                break;
-            }
         }
 
         p1DiceQueue.UpdateQueueDisplay(playerField1.ActionOrder);
