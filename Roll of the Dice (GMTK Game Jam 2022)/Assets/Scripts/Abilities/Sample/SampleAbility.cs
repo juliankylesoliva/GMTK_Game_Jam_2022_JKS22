@@ -6,8 +6,13 @@ public class SampleAbility : AbilityBase
 {
     protected override IEnumerator AbilityProcedure(int dieNum)
     {
-        Debug.Log($"Die number: {dieNum}");
-        yield return new WaitForSeconds(2f);
+        gameMasterRef.MakeAnnouncement($"Die number selected: {dieNum}");
+        yield return StartCoroutine(gameMasterRef.WaitForInput());
         yield break;
+    }
+
+    protected override bool CounterClickCondition()
+    {
+        return gameMasterRef.GetLPDifference(assignedField.PlayerCode) < 0;
     }
 }

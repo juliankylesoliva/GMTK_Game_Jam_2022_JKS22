@@ -20,6 +20,12 @@ public abstract class AbilityBase : MonoBehaviour
     private bool[] numbersAvailable = new bool[6];
     private AbilityCounter[] counterRefs = new AbilityCounter[6];
 
+    protected PlayerField assignedField = null;
+    public PlayerField AssignedField { set { assignedField = value; } }
+
+    protected TheGameMaster gameMasterRef = null;
+    public TheGameMaster GameMasterRef { set { gameMasterRef = value; } }
+
     void Start()
     {
         Setup();
@@ -27,13 +33,16 @@ public abstract class AbilityBase : MonoBehaviour
 
     protected abstract IEnumerator AbilityProcedure(int dieNum);
 
+    protected abstract bool CounterClickCondition();
+
     public IEnumerator ActivateAbility()
     {
         AbilityCounter selectedCounter = FindFirstSelectedCounter();
         if (selectedCounter == null) { yield break; }
 
         selectedCounter.SetState(AbilityCounterState.Used);
-        Debug.Log($"Activated {abilityName}!!!");
+        gameMasterRef.MakeAnnouncement($"{(assignedField.PlayerCode == PlayerCode.P1 ? "Player 1" : "Player 2")} activated {abilityName} ({selectedCounter.CurrentNumber})!");
+        yield return StartCoroutine(gameMasterRef.WaitForInput());
         yield return StartCoroutine(AbilityProcedure(selectedCounter.CurrentNumber));
     }
 
@@ -64,6 +73,7 @@ public abstract class AbilityBase : MonoBehaviour
                 GameObject tempObj = Instantiate(counterPrefab, counterLocations[i]);
                 AbilityCounter tempCounter = tempObj.GetComponent<AbilityCounter>();
                 tempCounter.SetNumber(num);
+                tempCounter.SetClickCondition(CounterClickCondition);
                 counterRefs[i] = tempCounter;
                 break;
             }

@@ -68,6 +68,11 @@ public class TheGameMaster : MonoBehaviour
 
     [SerializeField] GameObject menuPanel;
 
+    [SerializeField] AbilityLibrary abilityLib;
+
+    [SerializeField] Transform p1AbilityHolder;
+    [SerializeField] Transform p2AbilityHolder;
+
     ComputerPlayer computerPlayer;
     AudioSource audioSource;
 
@@ -317,15 +322,13 @@ public class TheGameMaster : MonoBehaviour
 
     public IEnumerator AbilitySelect() // Temp
     {
-        if (playerField1.ChosenAbility != null)
-        {
+        AbilityBase tempAbility = Instantiate(abilityLib.GetAbilityObject("SampleAbility"), p1AbilityHolder).GetComponent<AbilityBase>();
+        tempAbility.GameMasterRef = this;
+        playerField1.ChosenAbility = tempAbility;
 
-        }
-
-        if (playerField2.ChosenAbility != null)
-        {
-
-        }
+        tempAbility = Instantiate(abilityLib.GetAbilityObject("SampleAbility"), p2AbilityHolder).GetComponent<AbilityBase>();
+        tempAbility.GameMasterRef = this;
+        playerField2.ChosenAbility = tempAbility;
 
         StartCoroutine(Deckbuilder());
         yield break;
@@ -955,7 +958,13 @@ public class TheGameMaster : MonoBehaviour
         yield return null;
     }
 
-    private IEnumerator WaitForInput()
+    public void MakeAnnouncement(string text)
+    {
+        announcerText.color = Color.white;
+        announcerText.text = text;
+    }
+
+    public IEnumerator WaitForInput()
     {
         float currentTimer = 2f;
         yield return null;
@@ -967,7 +976,7 @@ public class TheGameMaster : MonoBehaviour
         yield return null;
     }
 
-    private bool DealDamageTo(PlayerCode player, int damage, bool isGuarding)
+    public bool DealDamageTo(PlayerCode player, int damage, bool isGuarding)
     {
         GameObject tempObj = Instantiate(damageNumberPrefab, (player == PlayerCode.P1 ? p1Healthbar.transform.position : p2Healthbar.transform.position), Quaternion.identity);
         DamageNumber tempDmgNumObj = tempObj.GetComponent<DamageNumber>();
@@ -1010,7 +1019,7 @@ public class TheGameMaster : MonoBehaviour
         return false;
     }
 
-    private void RestoreLifePointsTo(PlayerCode player, int healing)
+    public void RestoreLifePointsTo(PlayerCode player, int healing)
     {
         GameObject tempObj = Instantiate(healingNumberPrefab, (player == PlayerCode.P1 ? p1Healthbar.transform.position : p2Healthbar.transform.position), Quaternion.identity);
         HealingNumber tempHealNumObj = tempObj.GetComponent<HealingNumber>();

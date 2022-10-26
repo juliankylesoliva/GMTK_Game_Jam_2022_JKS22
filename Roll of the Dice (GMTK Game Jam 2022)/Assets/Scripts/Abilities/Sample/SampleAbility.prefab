@@ -58,7 +58,7 @@ MonoBehaviour:
   - {fileID: 4895877683562192017}
   - {fileID: 4829060146192557140}
   - {fileID: 6012888177849983182}
-  abilityName: 
+  abilityName: Sample Ability
   is1Available: 1
   is2Available: 1
   is3Available: 1

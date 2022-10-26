@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -18,6 +19,8 @@ public class AbilityCounter : MonoBehaviour
     private int currentNumber = 1;
     public int CurrentNumber { get { return currentNumber; } }
 
+    private Func<bool> clickCondition = null;
+
     void Awake()
     {
         counterSprite = this.gameObject.GetComponent<SpriteRenderer>();
@@ -31,6 +34,8 @@ public class AbilityCounter : MonoBehaviour
 
     public void DoCounterClick()
     {
+        if (clickCondition == null || !clickCondition()) { return; }
+
         switch (currentCounterState)
         {
             case AbilityCounterState.Unselected:
@@ -67,5 +72,10 @@ public class AbilityCounter : MonoBehaviour
         if (num < 1 || num > 6) { return; }
         counterSprite.sprite = spriteList[num - 1];
         currentNumber = num;
+    }
+
+    public void SetClickCondition(Func<bool> condition)
+    {
+        clickCondition = condition;
     }
 }

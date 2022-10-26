@@ -7,6 +7,7 @@ public enum PlayerCode { P1, P2 }
 public class PlayerField : MonoBehaviour
 {
     [SerializeField] PlayerCode playerCode;
+    public PlayerCode PlayerCode { get { return playerCode; } }
 
     [SerializeField] DiceDeck_SO diceDeck;
 
@@ -23,9 +24,6 @@ public class PlayerField : MonoBehaviour
     public DieObj[] NumberOrder { get { return numberOrderField.GetDiceObjectArray(); } }
     public int[] NumberOrderValues { get { return numberOrderField.GetDiceValueArray(); } }
 
-    [SerializeField] AbilityBase chosenAbility;
-    public AbilityBase ChosenAbility { get { return chosenAbility; } set { chosenAbility = value; } }
-
     AudioSource audioSource;
 
     private ActionDieObj[] actionDiceRefs = new ActionDieObj[5];
@@ -38,6 +36,19 @@ public class PlayerField : MonoBehaviour
     {
         get { return isComputerControlled; }
         set { isComputerControlled = value; }
+    }
+
+    private AbilityBase chosenAbility = null;
+    public AbilityBase ChosenAbility
+    {
+        get { return chosenAbility; }
+
+        set
+        {
+            if (chosenAbility != null) { GameObject.Destroy(chosenAbility.gameObject); }
+            chosenAbility = value;
+            chosenAbility.AssignedField = this;
+        }
     }
 
     void Awake()
