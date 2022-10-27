@@ -13,6 +13,6 @@ public class SampleAbility : AbilityBase
 
     protected override bool CounterClickCondition()
     {
-        return gameMasterRef.GetLPDifference(assignedField.PlayerCode) < 0;
+        return true;
     }
 }

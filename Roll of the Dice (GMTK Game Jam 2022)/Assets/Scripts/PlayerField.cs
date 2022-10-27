@@ -123,6 +123,21 @@ public class PlayerField : MonoBehaviour
         return numberOrderField.GetDiceValueArray();
     }
 
+    public int GetAmountOfDiceWithGivenNumber(int num)
+    {
+        if (num < 1 || num > 6) { return 0; }
+
+        int[] tempValues = GetNumberOrderArray();
+        if (tempValues == null) { return 0; }
+
+        int sum = 0;
+        foreach (int i in tempValues)
+        {
+            if (i == num) { sum++; }
+        }
+        return sum;
+    }
+
     public void AssignActionStrengths()
     {
         DieObj[] numberDiceOrder = numberOrderField.GetDiceObjectArray();

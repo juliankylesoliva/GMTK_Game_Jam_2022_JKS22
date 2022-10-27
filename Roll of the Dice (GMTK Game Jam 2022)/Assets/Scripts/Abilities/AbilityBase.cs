@@ -4,7 +4,6 @@ using UnityEngine;
 
 public abstract class AbilityBase : MonoBehaviour
 {
-    [SerializeField] GameObject counterPrefab;
     [SerializeField] Transform[] counterLocations;
 
     [SerializeField] protected string abilityName;
@@ -70,7 +69,7 @@ public abstract class AbilityBase : MonoBehaviour
         {
             if (counterLocations[i].transform.childCount <= 0)
             {
-                GameObject tempObj = Instantiate(counterPrefab, counterLocations[i]);
+                GameObject tempObj = Instantiate(TheDieFactory.GetAbilityCounterPrefab(), counterLocations[i]);
                 AbilityCounter tempCounter = tempObj.GetComponent<AbilityCounter>();
                 tempCounter.SetNumber(num);
                 tempCounter.SetClickCondition(CounterClickCondition);

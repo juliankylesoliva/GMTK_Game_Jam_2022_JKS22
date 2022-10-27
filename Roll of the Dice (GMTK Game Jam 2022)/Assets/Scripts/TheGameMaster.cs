@@ -322,11 +322,11 @@ public class TheGameMaster : MonoBehaviour
 
     public IEnumerator AbilitySelect() // Temp
     {
-        AbilityBase tempAbility = Instantiate(abilityLib.GetAbilityObject("SampleAbility"), p1AbilityHolder).GetComponent<AbilityBase>();
+        AbilityBase tempAbility = Instantiate(abilityLib.GetAbilityObject("Equalizer"), p1AbilityHolder).GetComponent<AbilityBase>();
         tempAbility.GameMasterRef = this;
         playerField1.ChosenAbility = tempAbility;
 
-        tempAbility = Instantiate(abilityLib.GetAbilityObject("SampleAbility"), p2AbilityHolder).GetComponent<AbilityBase>();
+        tempAbility = Instantiate(abilityLib.GetAbilityObject("Equalizer"), p2AbilityHolder).GetComponent<AbilityBase>();
         tempAbility.GameMasterRef = this;
         playerField2.ChosenAbility = tempAbility;
 

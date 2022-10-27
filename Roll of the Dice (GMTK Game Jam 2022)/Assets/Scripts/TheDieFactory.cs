@@ -10,10 +10,14 @@ public class TheDieFactory : MonoBehaviour
     [SerializeField] GameObject numberDiePrefab;
     private static GameObject _numberDiePrefab = null;
 
+    [SerializeField] GameObject abilityCounterPrefab;
+    private static GameObject _abilityCounterPrefab;
+
     void Awake()
     {
         _actionDiePrefab = actionDiePrefab;
         _numberDiePrefab = numberDiePrefab;
+        _abilityCounterPrefab = abilityCounterPrefab;
     }
 
     public static GameObject GetActionDiePrefab()
@@ -24,5 +28,10 @@ public class TheDieFactory : MonoBehaviour
     public static GameObject GetNumberDiePrefab()
     {
         return _numberDiePrefab;
+    }
+
+    public static GameObject GetAbilityCounterPrefab()
+    {
+        return _abilityCounterPrefab;
     }
 }

@@ -16704,6 +16704,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   actionDiePrefab: {fileID: 2408880815415578114, guid: d4a661f89298ca945b3868ad31591653, type: 3}
   numberDiePrefab: {fileID: 1581577430734592737, guid: 4ffee9146a660454bb3418d29cc92b76, type: 3}
+  abilityCounterPrefab: {fileID: 3778628241066310849, guid: 88c026266d519bc4cac03ea2c527a425, type: 3}
 --- !u!1 &1920510597
 GameObject:
   m_ObjectHideFlags: 0
@@ -17712,6 +17713,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   abilityPrefabList:
   - {fileID: 736146779685429514, guid: fef9a8e76b059694793b68b752e39cb1, type: 3}
+  - {fileID: 7505660522118424742, guid: e1488a8769940424dab2531799efb47d, type: 3}
 --- !u!1 &2076300410
 GameObject:
   m_ObjectHideFlags: 0
@@ -17736,7 +17738,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2076300410}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0.59375, y: -3.09375, z: 0}
+  m_LocalPosition: {x: 0.59375, y: -2.78125, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
